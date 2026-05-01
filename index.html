@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pioneer Corn Growth Chart — SW Minnesota 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ee;--surface:#fff;--surface2:#f0ede6;--border:#d8d3c8;--border-light:#e8e4dc;
+  --text:#1a1814;--muted:#6b6560;--faint:#9e9890;
+  --blue:#1b4f8a;--blue-l:#dce8f5;--green:#1a5c3a;--green-l:#d8ede3;
+  --rust:#8a2c10;--rust-l:#f5e0d8;--red:#c0392b;--amber:#c8a84b;--radius:6px;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+.page-header{border-bottom:2px solid var(--text);padding-bottom:14px;margin-bottom:16px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.page-title{font-size:21px;font-weight:600;letter-spacing:-.3px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;border:.5px solid var(--border);background:var(--surface2);color:var(--muted);white-space:nowrap}
+.badge.live{background:#d8ede3;color:#1a5c3a;border-color:#9fd4b8}
+.badge.loading{background:#faeeda;color:#7a5000;border-color:#f0c060}
+.badge.error{background:#fde8e6;color:#8a1a10;border-color:#f0a090}
+.meta-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tab-nav{display:flex;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.tab-btn{font-family:var(--font);font-size:13px;font-weight:500;padding:8px 22px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .12s}
+.tab-btn:hover{color:var(--text);background:var(--surface2)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:18px}
+.stat-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.stat-label{font-size:10px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.stat-value{font-size:20px;font-weight:600;line-height:1}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.controls-bar{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.control-group{display:flex;flex-direction:column;gap:5px}
+.control-label{font-size:10px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+.btn-row{display:flex;gap:3px;flex-wrap:wrap}
+.btn{font-family:var(--font);font-size:12px;padding:4px 11px;border:.5px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .1s}
+.btn:hover{background:var(--surface2);color:var(--text)}
+.btn.active{background:var(--text);color:#fff;border-color:var(--text);font-weight:500}
+.btn.active.loc{background:#5a3e8c;border-color:#5a3e8c}
+select.pd-select{font-family:var(--mono);font-size:12px;padding:5px 10px;border:.5px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);cursor:pointer;min-width:120px}
+select.pd-select:focus{outline:none;border-color:var(--blue)}
+/* Hybrid selector dropdown */
+.hybrid-dropdown{position:relative;display:inline-block}
+.hybrid-dropdown-btn{font-family:var(--font);font-size:12px;padding:5px 12px;border:.5px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:160px;justify-content:space-between}
+.hybrid-dropdown-btn:hover{background:var(--surface2)}
+.hybrid-dropdown-btn .count{font-family:var(--mono);font-size:10px;background:var(--blue);color:#fff;border-radius:10px;padding:1px 6px}
+.hybrid-dropdown-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);box-shadow:0 6px 20px rgba(0,0,0,.12);width:220px;max-height:340px;overflow:hidden;flex-direction:column}
+.hybrid-dropdown-panel.open{display:flex}
+.hybrid-dd-search{padding:8px;border-bottom:.5px solid var(--border-light)}
+.hybrid-dd-search input{width:100%;font-family:var(--mono);font-size:11px;padding:4px 8px;border:.5px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);outline:none}
+.hybrid-dd-search input:focus{border-color:var(--blue)}
+.hybrid-dd-actions{display:flex;gap:4px;padding:5px 8px;border-bottom:.5px solid var(--border-light)}
+.hybrid-dd-actions button{font-family:var(--mono);font-size:10px;padding:2px 8px;border:.5px solid var(--border);border-radius:3px;background:transparent;cursor:pointer;color:var(--muted)}
+.hybrid-dd-actions button:hover{background:var(--surface2);color:var(--text)}
+.hybrid-dd-list{overflow-y:auto;flex:1}
+.hybrid-dd-item{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-family:var(--mono)}
+.hybrid-dd-item:hover{background:var(--surface2)}
+.hybrid-dd-item input[type=checkbox]{width:13px;height:13px;cursor:pointer;accent-color:var(--blue);flex-shrink:0}
+.hybrid-dd-item .h-label{font-weight:500;flex:1}
+.hybrid-dd-item .h-rm{font-size:10px;color:var(--faint)}
+.data-banner{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;font-family:var(--mono)}
+.data-banner .status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.live{background:#1a5c3a}
+.dot.loading{background:var(--amber);animation:pulse 1s infinite}
+.dot.partial{background:var(--blue)}
+.dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.l-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.l-line{width:18px;height:2px;background:var(--red);flex-shrink:0}
+.l-dash{width:18px;height:2px;flex-shrink:0;background:repeating-linear-gradient(90deg,var(--amber) 0 4px,transparent 4px 8px)}
+.chart-section{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.chart-title{font-size:11px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.chart-wrap{position:relative;width:100%;height:560px}
+.tooltip-box{position:fixed;background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;pointer-events:none;z-index:100;max-width:230px;display:none;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.tt-title{font-weight:600;font-size:13px;margin-bottom:5px;border-bottom:.5px solid var(--border-light);padding-bottom:4px;font-family:var(--mono)}
+.tt-row{display:flex;justify-content:space-between;gap:12px;padding:1px 0}
+.tt-label{color:var(--muted)}
+.tt-val{font-weight:500}
+.table-section{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.table-header{padding:9px 14px;border-bottom:.5px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:7px 10px;font-size:10px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.4px;border-bottom:.5px solid var(--border);cursor:pointer;background:var(--surface2);white-space:nowrap}
+thead th:hover{color:var(--text)}
+tbody tr{border-bottom:.5px solid var(--border-light)}
+tbody tr:hover td{background:var(--surface2)}
+tbody td{padding:7px 10px;white-space:nowrap}
+.hybrid-name{font-family:var(--mono);font-weight:500;font-size:12px}
+.rm-badge{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:3px;background:var(--surface2);border:.5px solid var(--border);color:var(--muted)}
+.date-cell{font-family:var(--mono);font-size:11px}
+.days-cell{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.footnote{font-size:10px;font-family:var(--mono);color:var(--faint);line-height:1.7;padding:10px 0 4px;border-top:.5px solid var(--border-light);margin-top:4px}
+.loc-indicator{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:4px;background:#ede9f8;color:#5a3e8c;border:.5px solid #c4b8e8;font-weight:500}
+.gdu-section{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.gdu-header{padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.gdu-header-title{font-size:11px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+.gdu-legend{display:flex;flex-wrap:wrap;gap:5px 14px;padding:7px 14px;border-bottom:.5px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--muted);background:var(--surface2)}
+.gdu-legend span{display:flex;align-items:center;gap:4px}
+.swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;display:inline-block}
+.gdu-table-wrap{overflow-x:auto;max-height:620px;overflow-y:auto}
+.gdu-cal{width:100%;border-collapse:collapse;font-size:11px}
+.gdu-cal thead{position:sticky;top:0;z-index:2}
+.gdu-cal thead th{padding:6px 10px;font-size:10px;font-family:var(--mono);color:var(--faint);text-transform:uppercase;letter-spacing:.4px;border-bottom:.5px solid var(--border);background:var(--surface2);text-align:right;white-space:nowrap}
+.gdu-cal thead th:first-child,.gdu-cal thead th:nth-child(2){text-align:left}
+.gdu-cal tbody tr{border-bottom:.5px solid var(--border-light)}
+.gdu-cal tbody tr:hover td{background:var(--surface2) !important}
+.gdu-cal tbody td{padding:4px 10px;font-family:var(--mono);font-size:11px;text-align:right;white-space:nowrap}
+.gdu-cal tbody td:first-child,.gdu-cal tbody td:nth-child(2){text-align:left}
+.row-actual td{background:rgba(27,79,138,0.04)}
+.row-forecast td{background:rgba(200,168,75,0.06)}
+.row-hist td{background:rgba(0,0,0,0.01)}
+.row-today td{background:rgba(192,57,43,0.09) !important;font-weight:600}
+.row-month td{border-top:1.5px solid var(--border)}
+.row-month td:first-child{font-weight:600;color:var(--text)}
+.row-silk td{background:rgba(26,92,58,0.09) !important}
+.row-bl td{background:rgba(138,44,16,0.09) !important}
+.row-harv td{background:rgba(90,62,140,0.09) !important}
+.row-plant td{background:rgba(27,79,138,0.1) !important;font-weight:600}
+.tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500;margin-left:3px;vertical-align:middle;line-height:1.4}
+.tag-silk{background:var(--green-l);color:var(--green)}
+.tag-bl{background:var(--rust-l);color:var(--rust)}
+.tag-harv{background:#ede9f8;color:#5a3e8c}
+.tag-today{background:rgba(192,57,43,0.15);color:var(--red)}
+.tag-fcst{background:rgba(200,168,75,0.18);color:#7a5000}
+.tag-plant{background:var(--blue-l);color:var(--blue)}
+.tag-live{background:var(--green-l);color:var(--green)}
+.tag-hist{background:var(--surface2);color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Pioneer Corn Hybrid Growth Chart</div>
+    <div class="page-sub">SW Minnesota &mdash; 2026 Growing Season &nbsp;|&nbsp; <span id="loc-display" class="loc-indicator">Marshall, MN</span></div>
+  </div>
+  <div class="meta-row">
+    <span class="badge">Pioneer platform specs</span>
+    <span class="badge">Base 50&deg;F / Ceiling 86&deg;F</span>
+    <span class="badge live">Historical: 2020&ndash;2025 avg (MRCC)</span>
+    <span class="badge" id="api-badge">Live data: loading&hellip;</span>
+  </div>
+</div>
+
+<div class="data-banner">
+  <div class="status">
+    <div class="dot loading" id="status-dot"></div>
+    <span id="status-text">Fetching live GDDs + 10-day forecast&hellip;</span>
+  </div>
+  <button class="btn" onclick="fetchAllLive()" style="font-size:10px;padding:3px 10px">&#8635; Refresh</button>
+</div>
+
+<div class="controls-bar">
+  <div class="control-group">
+    <div class="control-label">Location</div>
+    <div class="btn-row" id="loc-btns">
+      <button class="btn active loc" onclick="setLoc(0)">Marshall</button>
+      <button class="btn" onclick="setLoc(1)">Ivanhoe</button>
+      <button class="btn" onclick="setLoc(2)">Reading</button>
+      <button class="btn" onclick="setLoc(3)">Truman</button>
+      <button class="btn" onclick="setLoc(4)">Rdwd Falls</button>
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="control-label">Planting date</div>
+    <select class="pd-select" id="pd-select" onchange="onPDChange()">
+    </select>
+  </div>
+  <div class="control-group">
+    <div class="control-label">Hybrids</div>
+    <div class="hybrid-dropdown" id="hybrid-dropdown">
+      <button class="hybrid-dropdown-btn" onclick="toggleHybridPanel(event)">
+        <span id="hybrid-btn-label">All 30 hybrids</span>
+        <span class="count" id="hybrid-count">30</span>
+      </button>
+      <div class="hybrid-dropdown-panel" id="hybrid-panel">
+        <div class="hybrid-dd-search"><input type="text" id="hybrid-search" placeholder="Search hybrids..." oninput="filterHybrids()"></div>
+        <div class="hybrid-dd-actions">
+          <button onclick="selectAllHybrids()">All</button>
+          <button onclick="selectNoneHybrids()">None</button>
+          <button onclick="selectByRM(92,99)">92-99</button>
+          <button onclick="selectByRM(100,105)">100-105</button>
+          <button onclick="selectByRM(106,114)">106-114</button>
+        </div>
+        <div class="hybrid-dd-list" id="hybrid-dd-list"></div>
+      </div>
+    </div>
+  </div>
+  <div class="control-group" id="layer-controls">
+    <div class="control-label">Show layers</div>
+    <div class="btn-row">
+      <button class="btn active" id="btn-silk" onclick="toggleView('silk')">Silk date</button>
+      <button class="btn active" id="btn-bl" onclick="toggleView('bl')">Blacklayer</button>
+      <button class="btn active" id="btn-harv" onclick="toggleView('harv')">Harvest (21%)</button>
+    </div>
+  </div>
+  <div class="control-group" id="sort-controls">
+    <div class="control-label">Sort by</div>
+    <div class="btn-row">
+      <button class="btn active" id="sort-rm" onclick="setSort('rm')">RM</button>
+      <button class="btn" id="sort-silk" onclick="setSort('silk')">Silk</button>
+      <button class="btn" id="sort-harv" onclick="setSort('harv')">Harvest</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" id="tab-chart-btn" onclick="switchTab('chart')">Growth Chart</button>
+  <button class="tab-btn" id="tab-gdu-btn" onclick="switchTab('gdu')">GDU Calendar</button>
+</div>
+
+<div id="panel-chart" class="tab-panel active">
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="chart-section">
+    <div class="chart-title">Silk &amp; Harvest dates by hybrid &mdash; <span id="chart-subtitle"></span></div>
+    <div class="legend-row" id="legend-row"></div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+  <div class="table-section">
+    <div class="table-header">
+      <span id="table-label">Hybrid detail</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:10px;color:var(--faint)">Click headers to sort</span>
+        <button class="btn" onclick="exportToExcel()" style="font-size:10px;padding:3px 10px;display:flex;align-items:center;gap:4px">&#8681; Export Excel</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="setSort('rm')">Hybrid</th>
+          <th onclick="setSort('gduSilk')">GDU to silk</th>
+          <th onclick="setSort('gduBL')">GDU to blacklayer</th>
+          <th onclick="setSort('silk')">Silk date</th>
+          <th onclick="setSort('bl')">Blacklayer</th>
+          <th onclick="setSort('harv')">Harvest 21%</th>
+          <th onclick="setSort('days')">Days to harvest</th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="footnote" id="footnote"></div>
+</div>
+
+<div id="panel-gdu" class="tab-panel">
+  <div class="gdu-section">
+    <div class="gdu-header">
+      <span class="gdu-header-title" id="gdu-title">Daily GDU &amp; accumulation</span>
+    </div>
+    <div class="gdu-legend">
+      <span><span class="swatch" style="background:rgba(27,79,138,0.3);border:.5px solid #1b4f8a"></span>2026 actual (ACIS live)</span>
+      <span><span class="swatch" style="background:rgba(200,168,75,0.35);border:.5px solid #c8a84b"></span>10-day forecast (Open-Meteo)</span>
+      <span><span class="swatch" style="background:rgba(0,0,0,0.04);border:.5px solid var(--border)"></span>2020&ndash;2025 avg (MRCC CSV)</span>
+      <span><span class="swatch" style="background:rgba(192,57,43,0.2);border:.5px solid var(--red)"></span>Today</span>
+      <span><span class="swatch" style="background:rgba(26,92,58,0.18);border:.5px solid var(--green)"></span>Silk milestone</span>
+      <span><span class="swatch" style="background:rgba(138,44,16,0.18);border:.5px solid var(--rust)"></span>Blacklayer</span>
+      <span><span class="swatch" style="background:rgba(90,62,140,0.18);border:.5px solid #5a3e8c"></span>Harvest 21%</span>
+    </div>
+    <div class="gdu-table-wrap">
+      <table class="gdu-cal">
+        <thead><tr>
+          <th style="text-align:left">Date</th>
+          <th style="text-align:left">DOY</th>
+          <th>Daily GDU</th>
+          <th>Source</th>
+          <th>Cumul. from planting</th>
+          <th>Cumul. from Jan 1</th>
+          <th style="text-align:left">Notes</th>
+        </tr></thead>
+        <tbody id="gdu-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="footnote" id="gdu-footnote"></div>
+</div>
+
+<div class="tooltip-box" id="tooltip"></div>
+
+<script>
+// ============================================================
+// HYBRID DATA
+// ============================================================
+var HYBRIDS = [
+  {label:'P92399',  rm:92,  gduSilk:1150, gduBL:2190},
+  {label:'P9492',   rm:94,  gduSilk:1210, gduBL:2350},
+  {label:'P96567',  rm:96,  gduSilk:1250, gduBL:2350},
+  {label:'P96760',  rm:96,  gduSilk:1200, gduBL:2350},
+  {label:'P97037',  rm:97,  gduSilk:1190, gduBL:2400},
+  {label:'P97299',  rm:97,  gduSilk:1180, gduBL:2350},
+  {label:'P98125',  rm:98,  gduSilk:1200, gduBL:2420},
+  {label:'P9955',   rm:99,  gduSilk:1240, gduBL:2400},
+  {label:'P00549',  rm:100, gduSilk:1200, gduBL:2420},
+  {label:'P01851',  rm:101, gduSilk:1280, gduBL:2470},
+  {label:'P02405',  rm:102, gduSilk:1250, gduBL:2470},
+  {label:'P03115',  rm:103, gduSilk:1270, gduBL:2450},
+  {label:'P0339',   rm:103, gduSilk:1260, gduBL:2420},
+  {label:'P03951',  rm:103, gduSilk:1250, gduBL:2530},
+  {label:'P0404',   rm:104, gduSilk:1250, gduBL:2450},
+  {label:'P05081',  rm:105, gduSilk:1320, gduBL:2580},
+  {label:'P0529',   rm:105, gduSilk:1340, gduBL:2550},
+  {label:'P05466',  rm:105, gduSilk:1270, gduBL:2500},
+  {label:'P05737',  rm:105, gduSilk:1270, gduBL:2580},
+  {label:'P0622',   rm:106, gduSilk:1270, gduBL:2550},
+  {label:'P07147',  rm:107, gduSilk:1330, gduBL:2680},
+  {label:'P08527',  rm:108, gduSilk:1380, gduBL:2580},
+  {label:'P0859',   rm:108, gduSilk:1380, gduBL:2680},
+  {label:'P0953',   rm:109, gduSilk:1380, gduBL:2730},
+  {label:'P1027',   rm:110, gduSilk:1360, gduBL:2760},
+  {label:'P10300',  rm:110, gduSilk:1310, gduBL:2630},
+  {label:'P1185',   rm:111, gduSilk:1370, gduBL:2730},
+  {label:'P12517',  rm:112, gduSilk:1430, gduBL:2600},
+  {label:'P13777',  rm:113, gduSilk:1390, gduBL:2690},
+  {label:'P14830',  rm:114, gduSilk:1390, gduBL:2700}
+];
+
+// ============================================================
+// LOCATIONS — name, ACIS station ID, Open-Meteo coords
+// ============================================================
+var LOCS = [
+  {name:'Marshall, MN',      short:'Marshall',  key:'Marshall',     acis:'MMLthr',  lat:44.449, lon:-95.796},
+  {name:'Ivanhoe, MN',       short:'Ivanhoe',   key:'Ivanhoe',      acis:'215427',  lat:44.46,  lon:-96.266},
+  {name:'Reading, MN',       short:'Reading',   key:'Reading',      acis:'215977',  lat:43.706, lon:-95.711},
+  {name:'Truman, MN',        short:'Truman',    key:'Truman',       acis:'218272',  lat:43.827, lon:-94.439},
+  {name:'Redwood Falls, MN', short:'Rdwd Falls',key:'RedwoodFalls', acis:'216268',  lat:44.535, lon:-95.111}
+];
+
+var MONTHS      = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var MONTHS_FULL = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+var DAYS_IN_MO  = [31,28,31,30,31,30,31,31,30,31,30,31];
+var GDU_DRY     = 217.5;
+
+// ============================================================
+// HISTORICAL 2020-2025 DAILY AVERAGE (from MRCC CSV)
+// ============================================================
+var HIST_MARSHALL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.83, 12.0, 14.5, 12.83, 11.17, 14.17, 11.67, 9.83, 10.83, 10.67, 9.5, 13.0, 11.33, 14.5, 16.5, 11.67, 12.33, 12.83, 14.33, 13.5, 16.17, 15.17, 17.67, 22.17, 21.0, 21.17, 21.0, 20.5, 18.0, 22.33, 20.67, 16.83, 18.5, 22.33, 21.33, 19.33, 20.0, 21.0, 23.33, 21.5, 22.83, 18.83, 19.67, 22.67, 23.33, 20.83, 21.83, 19.83, 20.5, 21.67, 23.83, 21.17, 22.17, 23.83, 25.5, 25.33, 23.0, 20.33, 19.0, 21.67, 23.33, 21.83, 21.0, 22.17, 23.67, 24.5, 23.17, 20.67, 20.0, 22.67, 23.33, 21.83, 24.0, 23.5, 24.17, 24.0, 23.33, 26.0, 25.83, 24.17, 22.33, 21.83, 21.83, 22.17, 21.67, 20.33, 21.83, 20.83, 18.5, 20.5, 21.17, 22.0, 22.17, 20.83, 22.0, 19.0, 21.33, 21.33, 23.33, 21.0, 21.67, 22.33, 21.33, 20.17, 23.67, 23.67, 21.67, 18.5, 18.67, 21.83, 21.33, 19.17, 20.5, 18.67, 20.0, 18.0, 18.17, 16.83, 18.83, 15.5, 15.5, 13.0, 12.5, 13.67, 14.17, 13.33, 15.17, 19.5, 20.17, 20.0, 17.67, 17.0, 20.0, 16.67, 14.83, 12.83, 13.5, 13.33, 14.17, 16.0, 13.67, 13.83, 16.17, 17.33, 16.33, 13.33, 15.5, 12.17, 13.0, 9.67, 8.67, 10.67, 11.17, 11.5, 12.0, 7.67, 6.5, 3.0, 3.5, 3.67, 7.67, 6.83, 5.83, 6.5, 5.83, 6.17, 6.17, 1.5, 3.17, 2.83, 2.17, 3.5, 4.0, 3.17, 2.17, 2.67, 2.83, 3.33, 4.33, 6.33, 5.17, 4.83, 4.0, 3.17, 0.17, 0.33, 1.67, 1.83, 2.33, 2.5, 2.33, 0.67, 1.5, 1.17, 0.33, 0.0, 0.5, 1.83, 0.67, 0.5, 0.33, 0.0, 0.0, 1.67, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.83, 1.17, 0.5, 0.5, 0.33, 0.0, 0.0, 0.0, 0.33, 0.33, 0.0, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.17, 0.17, 0.0, 0.0, 0.0, 0.33, 0.0];
+var HIST_IVANHOE = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 11.0, 11.0, 13.5, 11.83, 10.33, 13.67, 11.83, 8.5, 9.67, 11.0, 9.33, 11.67, 10.17, 13.33, 15.17, 11.33, 11.67, 11.83, 14.83, 12.83, 14.17, 14.17, 15.5, 21.17, 19.5, 20.33, 19.33, 19.33, 18.17, 20.83, 20.0, 17.0, 16.83, 20.33, 21.67, 18.5, 19.5, 20.5, 23.33, 21.33, 22.17, 18.83, 18.33, 21.33, 22.17, 20.33, 20.5, 18.67, 18.83, 20.33, 23.0, 20.5, 20.83, 23.0, 25.0, 24.33, 22.0, 20.0, 18.5, 19.83, 22.5, 22.0, 20.5, 21.17, 23.17, 23.67, 22.67, 20.5, 18.67, 20.5, 21.83, 20.67, 22.5, 23.17, 23.83, 22.67, 22.83, 25.0, 25.5, 23.5, 21.83, 21.83, 21.67, 21.17, 20.83, 19.67, 21.33, 20.5, 18.0, 19.17, 20.0, 20.83, 21.33, 19.5, 20.5, 17.83, 19.5, 21.0, 22.17, 21.5, 21.33, 21.83, 20.83, 19.17, 22.5, 23.0, 21.5, 18.0, 18.5, 21.0, 20.33, 18.83, 18.83, 18.33, 19.5, 17.33, 17.17, 15.5, 17.83, 14.67, 15.17, 12.5, 11.67, 13.5, 13.33, 13.0, 14.5, 18.83, 19.67, 19.0, 16.83, 17.0, 19.5, 15.67, 13.67, 12.17, 12.83, 12.5, 13.83, 15.0, 14.33, 14.33, 14.5, 17.33, 16.0, 12.83, 14.67, 11.17, 12.17, 9.17, 7.83, 10.5, 10.67, 11.33, 11.33, 7.17, 6.5, 2.33, 3.0, 3.33, 7.5, 5.67, 5.67, 6.17, 5.5, 5.83, 6.0, 1.5, 2.83, 2.5, 2.0, 3.33, 3.83, 3.17, 1.83, 2.67, 2.67, 3.17, 4.0, 6.33, 4.5, 4.33, 3.33, 3.0, 0.0, 0.33, 1.33, 1.67, 2.17, 2.67, 2.33, 0.67, 1.33, 1.17, 0.33, 0.0, 0.33, 1.67, 0.5, 0.5, 0.33, 0.0, 0.0, 1.33, 0.0, 0.67, 0.0, 0.0, 0.0, 0.0, 0.83, 1.0, 0.33, 0.33, 0.33, 0.0, 0.0, 0.0, 0.17, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.83, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+var HIST_READING = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 11.5, 12.17, 11.83, 11.33, 9.67, 13.17, 12.17, 9.0, 9.17, 11.0, 8.33, 10.67, 10.5, 12.83, 14.83, 9.67, 11.5, 10.67, 13.0, 13.33, 13.33, 15.17, 15.17, 19.5, 20.0, 19.33, 18.67, 18.33, 18.67, 19.67, 19.5, 16.0, 17.0, 21.17, 22.17, 20.17, 19.67, 21.33, 22.5, 21.83, 21.83, 19.67, 18.33, 22.0, 21.67, 20.17, 19.83, 19.17, 19.33, 21.17, 22.83, 19.5, 20.33, 23.0, 24.33, 23.83, 21.83, 19.83, 18.17, 19.5, 23.0, 20.17, 19.5, 21.0, 22.5, 23.33, 20.33, 18.83, 18.67, 19.67, 21.17, 20.5, 22.67, 22.5, 23.33, 22.33, 23.17, 24.83, 24.5, 22.83, 22.33, 21.17, 20.0, 21.0, 19.83, 19.17, 19.67, 18.67, 19.0, 18.33, 20.33, 20.33, 20.83, 19.0, 18.17, 16.83, 17.83, 18.83, 19.83, 20.67, 20.67, 20.83, 20.67, 19.33, 23.17, 22.5, 20.33, 18.0, 19.0, 22.0, 20.17, 17.83, 18.33, 18.17, 18.33, 16.17, 16.5, 14.5, 17.17, 14.5, 14.33, 11.67, 10.5, 12.0, 13.0, 13.17, 15.33, 18.5, 17.83, 19.0, 15.83, 16.0, 19.83, 13.83, 12.83, 13.0, 13.17, 12.17, 12.33, 13.83, 14.0, 15.5, 15.33, 18.17, 16.17, 12.5, 12.5, 10.83, 10.5, 8.83, 8.67, 10.0, 11.17, 11.33, 9.67, 7.0, 6.0, 2.83, 2.33, 3.0, 6.33, 7.17, 7.33, 5.33, 6.83, 6.17, 5.17, 2.5, 3.5, 2.0, 2.33, 3.33, 3.17, 4.33, 1.83, 2.5, 1.83, 2.83, 4.17, 5.0, 4.0, 3.67, 3.67, 3.67, 0.67, 1.0, 1.0, 1.5, 1.83, 2.67, 2.17, 0.83, 1.0, 0.67, 0.33, 0.0, 0.0, 1.0, 0.33, 0.17, 0.0, 0.0, 0.0, 1.17, 0.0, 0.33, 0.0, 0.0, 0.0, 0.0, 0.33, 0.0, 0.17, 0.33, 0.33, 0.0, 0.0, 0.0, 0.0, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+var HIST_TRUMAN = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.83, 13.0, 13.5, 13.5, 10.0, 14.5, 14.0, 10.0, 10.67, 11.67, 9.5, 13.0, 11.67, 14.17, 16.5, 12.17, 12.0, 11.67, 13.67, 14.17, 14.33, 15.83, 17.0, 20.67, 21.5, 19.67, 20.83, 20.83, 19.33, 20.17, 20.0, 17.67, 17.5, 21.17, 22.17, 21.0, 19.67, 21.67, 23.5, 22.0, 23.83, 20.67, 19.67, 23.33, 23.0, 21.83, 21.33, 20.33, 20.33, 22.0, 24.17, 21.33, 21.67, 21.67, 25.0, 25.67, 23.0, 21.67, 19.33, 20.83, 22.67, 21.83, 21.0, 21.0, 22.33, 22.5, 21.5, 20.33, 19.5, 19.83, 22.17, 22.0, 23.0, 22.5, 23.5, 22.67, 22.83, 24.83, 25.33, 23.67, 22.33, 21.67, 22.0, 20.33, 21.17, 20.17, 20.33, 20.67, 19.17, 20.33, 20.83, 21.83, 22.0, 18.83, 19.33, 18.0, 18.33, 19.17, 21.33, 21.33, 20.5, 21.67, 20.67, 19.33, 22.83, 22.83, 22.17, 19.33, 18.83, 20.83, 22.0, 18.83, 18.83, 17.5, 18.5, 16.5, 17.17, 15.33, 16.67, 14.17, 14.17, 12.83, 11.83, 11.67, 13.5, 12.33, 14.83, 17.33, 18.5, 19.83, 17.0, 15.83, 19.17, 16.0, 15.0, 14.5, 12.5, 13.5, 13.33, 15.33, 15.17, 13.67, 15.67, 17.67, 17.0, 12.67, 14.5, 11.17, 12.33, 10.5, 8.0, 10.67, 11.5, 10.83, 11.33, 7.5, 6.5, 3.0, 3.33, 3.17, 6.83, 8.33, 6.5, 6.5, 6.0, 6.33, 6.17, 1.67, 3.67, 3.17, 2.5, 3.33, 4.17, 4.67, 1.83, 2.83, 2.17, 3.0, 4.33, 6.5, 4.83, 3.83, 4.33, 4.83, 2.5, 0.33, 1.5, 1.5, 2.17, 2.83, 2.17, 0.5, 1.5, 1.83, 0.33, 0.0, 0.33, 1.17, 0.33, 0.33, 0.5, 0.0, 0.0, 1.33, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.17, 0.33, 0.67, 0.33, 0.17, 0.0, 0.0, 0.0, 0.33, 0.83, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+var HIST_REDWOODFALLS = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 11.5, 12.0, 14.0, 12.67, 10.67, 13.83, 12.5, 8.5, 9.67, 10.33, 9.83, 12.33, 11.17, 13.0, 15.33, 11.83, 12.0, 11.83, 13.83, 13.5, 15.33, 14.67, 16.33, 21.0, 20.67, 20.0, 20.5, 20.5, 18.0, 20.33, 19.33, 17.83, 17.17, 20.33, 20.83, 18.67, 18.67, 20.17, 22.33, 21.0, 21.83, 19.67, 19.5, 22.33, 22.0, 21.83, 20.67, 19.67, 19.5, 21.33, 23.33, 20.83, 21.83, 21.67, 24.5, 25.0, 22.33, 19.67, 18.83, 20.17, 22.17, 21.67, 20.83, 21.5, 22.0, 23.0, 21.67, 20.17, 18.33, 20.83, 22.33, 21.0, 22.83, 22.33, 23.5, 21.67, 22.83, 25.17, 24.67, 23.33, 21.83, 21.0, 21.33, 21.0, 21.17, 19.67, 20.17, 21.33, 18.17, 19.5, 20.17, 21.0, 21.33, 18.67, 19.5, 16.33, 19.17, 19.0, 21.67, 21.17, 20.33, 21.17, 20.5, 19.17, 22.33, 22.83, 21.5, 18.67, 18.33, 20.5, 21.17, 18.33, 18.67, 17.67, 19.0, 17.67, 16.33, 14.67, 16.0, 13.67, 13.83, 12.17, 11.17, 12.33, 12.83, 12.67, 14.5, 17.5, 19.5, 19.67, 17.0, 15.5, 19.5, 15.5, 14.17, 13.33, 12.5, 12.67, 12.67, 15.17, 13.67, 13.67, 13.0, 17.17, 16.5, 12.83, 14.5, 11.33, 12.0, 9.5, 8.5, 10.0, 10.5, 11.0, 11.17, 7.33, 6.17, 2.5, 3.17, 3.33, 7.5, 6.67, 6.17, 5.67, 5.67, 6.33, 5.5, 1.83, 3.33, 2.67, 2.0, 3.5, 4.17, 4.33, 1.5, 2.5, 2.33, 3.33, 4.67, 6.33, 4.33, 4.17, 3.5, 4.33, 0.0, 0.33, 1.17, 1.5, 2.33, 2.5, 1.67, 0.5, 1.17, 1.0, 0.33, 0.0, 0.33, 1.17, 0.5, 0.33, 0.17, 0.0, 0.0, 1.5, 0.0, 0.33, 0.0, 0.0, 0.0, 0.0, 0.33, 0.83, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.33, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+var HIST_BY_LOC = [HIST_MARSHALL, HIST_IVANHOE, HIST_READING, HIST_TRUMAN, HIST_REDWOODFALLS];
+
+// CSV 2026 seed data (overwritten by live ACIS on load)
+var CSV_2026 = {
+  "Marshall": {
+  1: {gdu:18.0, source:"actual"},
+  2: {gdu:0.0, source:"actual"},
+  3: {gdu:0.0, source:"actual"},
+  4: {gdu:0.0, source:"actual"},
+  5: {gdu:12.0, source:"actual"},
+  6: {gdu:0.0, source:"actual"},
+  7: {gdu:0.0, source:"actual"},
+  8: {gdu:0.0, source:"actual"},
+  9: {gdu:0.0, source:"actual"},
+  10: {gdu:5.0, source:"actual"},
+  11: {gdu:0.0, source:"actual"},
+  12: {gdu:0.0, source:"actual"},
+  13: {gdu:0.0, source:"actual"},
+  14: {gdu:4.0, source:"actual"},
+  15: {gdu:7.0, source:"actual"},
+  16: {gdu:17.0, source:"actual"},
+  17: {gdu:9.0, source:"actual"},
+  18: {gdu:0.0, source:"actual"},
+  19: {gdu:18.0, source:"actual"},
+  20: {gdu:1.0, source:"actual"},
+  21: {gdu:1.0, source:"actual"},
+  22: {gdu:0.0, source:"actual"},
+  23: {gdu:12.0, source:"actual"},
+  24: {gdu:18.0, source:"actual"},
+  25: {gdu:0.0, source:"actual"},
+  26: {gdu:0.0, source:"actual"},
+  27: {gdu:0.0, source:"actual"},
+  28: {gdu:0.0, source:"actual"},
+  29: {gdu:0.0, source:"actual"},
+  30: {gdu:0.0, source:"actual"},
+  31: {gdu:0.0, source:"actual"},
+  32: {gdu:0.0, source:"actual"},
+  33: {gdu:0.0, source:"actual"},
+  34: {gdu:0.0, source:"actual"},
+  35: {gdu:0.0, source:"actual"},
+  36: {gdu:0.0, source:"actual"},
+  37: {gdu:0.0, source:"actual"},
+  38: {gdu:0.0, source:"actual"},
+  39: {gdu:0.0, source:"actual"},
+  40: {gdu:0.0, source:"actual"},
+  41: {gdu:0.0, source:"actual"},
+  42: {gdu:0.0, source:"actual"},
+  43: {gdu:1.0, source:"actual"},
+  44: {gdu:3.0, source:"actual"},
+  45: {gdu:3.0, source:"actual"},
+  46: {gdu:6.0, source:"actual"},
+  47: {gdu:7.0, source:"actual"},
+  48: {gdu:1.0, source:"actual"},
+  49: {gdu:3.0, source:"actual"},
+  50: {gdu:0.0, source:"actual"},
+  51: {gdu:0.0, source:"actual"},
+  52: {gdu:0.0, source:"actual"},
+  53: {gdu:0.0, source:"actual"},
+  54: {gdu:0.0, source:"actual"},
+  55: {gdu:0.0, source:"actual"},
+  56: {gdu:0.0, source:"actual"},
+  57: {gdu:0.0, source:"actual"},
+  58: {gdu:3.0, source:"actual"},
+  59: {gdu:4.0, source:"actual"},
+  60: {gdu:0.0, source:"actual"},
+  61: {gdu:0.0, source:"actual"},
+  62: {gdu:0.0, source:"actual"},
+  63: {gdu:1.0, source:"actual"},
+  64: {gdu:0.0, source:"actual"},
+  65: {gdu:3.0, source:"actual"},
+  66: {gdu:0.0, source:"actual"},
+  67: {gdu:2.0, source:"actual"},
+  68: {gdu:9.0, source:"actual"},
+  69: {gdu:0.0, source:"actual"},
+  70: {gdu:0.0, source:"actual"},
+  71: {gdu:0.0, source:"actual"},
+  72: {gdu:0.0, source:"actual"},
+  73: {gdu:0.0, source:"actual"},
+  74: {gdu:0.0, source:"actual"},
+  75: {gdu:0.0, source:"actual"},
+  76: {gdu:0.0, source:"actual"},
+  77: {gdu:0.0, source:"actual"},
+  78: {gdu:4.0, source:"actual"},
+  79: {gdu:10.0, source:"actual"},
+  80: {gdu:7.0, source:"actual"},
+  81: {gdu:15.0, source:"actual"},
+  82: {gdu:0.0, source:"actual"},
+  83: {gdu:0.0, source:"actual"},
+  84: {gdu:4.0, source:"actual"},
+  85: {gdu:13.0, source:"actual"},
+  86: {gdu:0.0, source:"actual"},
+  87: {gdu:0.0, source:"actual"},
+  88: {gdu:7.0, source:"actual"},
+  89: {gdu:12.0, source:"actual"},
+  90: {gdu:12.0, source:"actual"},
+  91: {gdu:0.0, source:"actual"},
+  92: {gdu:0.0, source:"actual"},
+  93: {gdu:0.0, source:"actual"},
+  94: {gdu:0.0, source:"actual"},
+  95: {gdu:0.0, source:"actual"},
+  96: {gdu:5.0, source:"actual"},
+  97: {gdu:0.0, source:"actual"},
+  98: {gdu:0.0, source:"actual"},
+  99: {gdu:3.0, source:"actual"},
+  100: {gdu:0.0, source:"actual"},
+  101: {gdu:4.0, source:"actual"},
+  102: {gdu:7.0, source:"actual"},
+  103: {gdu:17.0, source:"actual"},
+  104: {gdu:9.0, source:"actual"},
+  105: {gdu:4.0, source:"actual"},
+  106: {gdu:11.0, source:"actual"},
+  107: {gdu:18.0, source:"actual"},
+  108: {gdu:1.0, source:"actual"},
+  109: {gdu:1.0, source:"actual"},
+  110: {gdu:0.0, source:"actual"},
+  111: {gdu:12.0, source:"actual"},
+  112: {gdu:15.0, source:"actual"},
+  113: {gdu:23.0, source:"actual"},
+  114: {gdu:18.0, source:"actual"},
+  115: {gdu:5.0, source:"actual"},
+  116: {gdu:0.0, source:"actual"},
+  117: {gdu:0.0, source:"actual"},
+  118: {gdu:0.0, source:"actual"},
+  119: {gdu:0.0, source:"actual"},
+  120: {gdu:0.0, source:"actual"}
+  },
+  "Ivanhoe": {
+  1: {gdu:18.0, source:"actual"},
+  2: {gdu:0.0, source:"actual"},
+  3: {gdu:0.0, source:"actual"},
+  4: {gdu:0.0, source:"actual"},
+  5: {gdu:11.0, source:"actual"},
+  6: {gdu:0.0, source:"actual"},
+  7: {gdu:0.0, source:"actual"},
+  8: {gdu:0.0, source:"actual"},
+  9: {gdu:0.0, source:"actual"},
+  10: {gdu:5.0, source:"actual"},
+  11: {gdu:0.0, source:"actual"},
+  12: {gdu:0.0, source:"actual"},
+  13: {gdu:0.0, source:"actual"},
+  14: {gdu:4.0, source:"actual"},
+  15: {gdu:6.0, source:"actual"},
+  16: {gdu:16.0, source:"actual"},
+  17: {gdu:8.0, source:"actual"},
+  18: {gdu:0.0, source:"actual"},
+  19: {gdu:14.0, source:"actual"},
+  20: {gdu:0.0, source:"actual"},
+  21: {gdu:0.0, source:"actual"},
+  22: {gdu:2.0, source:"actual"},
+  23: {gdu:12.0, source:"actual"},
+  24: {gdu:18.0, source:"actual"},
+  25: {gdu:0.0, source:"actual"},
+  26: {gdu:0.0, source:"actual"},
+  27: {gdu:0.0, source:"actual"},
+  28: {gdu:0.0, source:"actual"},
+  29: {gdu:0.0, source:"actual"},
+  30: {gdu:0.0, source:"actual"},
+  31: {gdu:0.0, source:"actual"},
+  32: {gdu:0.0, source:"actual"},
+  33: {gdu:0.0, source:"actual"},
+  34: {gdu:0.0, source:"actual"},
+  35: {gdu:0.0, source:"actual"},
+  36: {gdu:0.0, source:"actual"},
+  37: {gdu:0.0, source:"actual"},
+  38: {gdu:0.0, source:"actual"},
+  39: {gdu:0.0, source:"actual"},
+  40: {gdu:0.0, source:"actual"},
+  41: {gdu:0.0, source:"actual"},
+  42: {gdu:0.0, source:"actual"},
+  43: {gdu:1.0, source:"actual"},
+  44: {gdu:2.0, source:"actual"},
+  45: {gdu:3.0, source:"actual"},
+  46: {gdu:5.0, source:"actual"},
+  47: {gdu:6.0, source:"actual"},
+  48: {gdu:3.0, source:"actual"},
+  49: {gdu:3.0, source:"actual"},
+  50: {gdu:0.0, source:"actual"},
+  51: {gdu:0.0, source:"actual"},
+  52: {gdu:0.0, source:"actual"},
+  53: {gdu:0.0, source:"actual"},
+  54: {gdu:0.0, source:"actual"},
+  55: {gdu:0.0, source:"actual"},
+  56: {gdu:0.0, source:"actual"},
+  57: {gdu:0.0, source:"actual"},
+  58: {gdu:1.0, source:"actual"},
+  59: {gdu:2.0, source:"actual"},
+  60: {gdu:0.0, source:"actual"},
+  61: {gdu:0.0, source:"actual"},
+  62: {gdu:0.0, source:"actual"},
+  63: {gdu:2.0, source:"actual"},
+  64: {gdu:0.0, source:"actual"},
+  65: {gdu:3.0, source:"actual"},
+  66: {gdu:0.0, source:"actual"},
+  67: {gdu:0.0, source:"actual"},
+  68: {gdu:10.0, source:"actual"},
+  69: {gdu:0.0, source:"actual"},
+  70: {gdu:0.0, source:"actual"},
+  71: {gdu:0.0, source:"actual"},
+  72: {gdu:0.0, source:"actual"},
+  73: {gdu:0.0, source:"actual"},
+  74: {gdu:0.0, source:"actual"},
+  75: {gdu:0.0, source:"actual"},
+  76: {gdu:0.0, source:"actual"},
+  77: {gdu:0.0, source:"actual"},
+  78: {gdu:3.0, source:"actual"},
+  79: {gdu:11.0, source:"actual"},
+  80: {gdu:9.0, source:"actual"},
+  81: {gdu:15.0, source:"actual"},
+  82: {gdu:0.0, source:"actual"},
+  83: {gdu:0.0, source:"actual"},
+  84: {gdu:3.0, source:"actual"},
+  85: {gdu:13.0, source:"actual"},
+  86: {gdu:0.0, source:"actual"},
+  87: {gdu:0.0, source:"actual"},
+  88: {gdu:6.0, source:"actual"},
+  89: {gdu:12.0, source:"actual"},
+  90: {gdu:12.0, source:"actual"},
+  91: {gdu:0.0, source:"actual"},
+  92: {gdu:0.0, source:"actual"},
+  93: {gdu:0.0, source:"actual"},
+  94: {gdu:0.0, source:"actual"},
+  95: {gdu:0.0, source:"actual"},
+  96: {gdu:4.0, source:"actual"},
+  97: {gdu:0.0, source:"actual"},
+  98: {gdu:0.0, source:"actual"},
+  99: {gdu:4.0, source:"actual"},
+  100: {gdu:0.0, source:"actual"},
+  101: {gdu:4.0, source:"actual"},
+  102: {gdu:6.0, source:"actual"},
+  103: {gdu:16.0, source:"actual"},
+  104: {gdu:8.0, source:"actual"},
+  105: {gdu:8.0, source:"actual"},
+  106: {gdu:14.0, source:"actual"},
+  107: {gdu:13.0, source:"actual"},
+  108: {gdu:0.0, source:"actual"},
+  109: {gdu:0.0, source:"actual"},
+  110: {gdu:2.0, source:"actual"},
+  111: {gdu:12.0, source:"actual"},
+  112: {gdu:17.0, source:"actual"},
+  113: {gdu:20.0, source:"actual"},
+  114: {gdu:13.0, source:"actual"},
+  115: {gdu:3.0, source:"actual"},
+  116: {gdu:0.0, source:"actual"},
+  117: {gdu:0.0, source:"actual"},
+  118: {gdu:0.0, source:"actual"},
+  119: {gdu:0.0, source:"actual"},
+  120: {gdu:0.0, source:"actual"}
+  },
+  "Reading": {
+  1: {gdu:18.0, source:"actual"},
+  2: {gdu:1.0, source:"actual"},
+  3: {gdu:0.0, source:"actual"},
+  4: {gdu:0.0, source:"actual"},
+  5: {gdu:5.0, source:"actual"},
+  6: {gdu:0.0, source:"actual"},
+  7: {gdu:0.0, source:"actual"},
+  8: {gdu:0.0, source:"actual"},
+  9: {gdu:0.0, source:"actual"},
+  10: {gdu:0.0, source:"actual"},
+  11: {gdu:0.0, source:"actual"},
+  12: {gdu:2.0, source:"actual"},
+  13: {gdu:2.0, source:"actual"},
+  14: {gdu:4.0, source:"actual"},
+  15: {gdu:13.0, source:"actual"},
+  16: {gdu:14.0, source:"actual"},
+  17: {gdu:11.0, source:"actual"},
+  18: {gdu:0.0, source:"actual"},
+  19: {gdu:12.0, source:"actual"},
+  20: {gdu:0.0, source:"actual"},
+  21: {gdu:0.0, source:"actual"},
+  22: {gdu:7.0, source:"actual"},
+  23: {gdu:11.0, source:"actual"},
+  24: {gdu:18.0, source:"actual"},
+  25: {gdu:0.0, source:"actual"},
+  26: {gdu:0.0, source:"actual"},
+  27: {gdu:0.0, source:"actual"},
+  28: {gdu:0.0, source:"actual"},
+  29: {gdu:0.0, source:"actual"},
+  30: {gdu:0.0, source:"actual"},
+  31: {gdu:0.0, source:"actual"},
+  32: {gdu:0.0, source:"actual"},
+  33: {gdu:0.0, source:"actual"},
+  34: {gdu:0.0, source:"actual"},
+  35: {gdu:0.0, source:"actual"},
+  36: {gdu:0.0, source:"actual"},
+  37: {gdu:0.0, source:"actual"},
+  38: {gdu:0.0, source:"actual"},
+  39: {gdu:0.0, source:"actual"},
+  40: {gdu:0.0, source:"actual"},
+  41: {gdu:1.0, source:"actual"},
+  42: {gdu:0.0, source:"actual"},
+  43: {gdu:0.0, source:"actual"},
+  44: {gdu:1.0, source:"actual"},
+  45: {gdu:3.0, source:"actual"},
+  46: {gdu:5.0, source:"actual"},
+  47: {gdu:5.0, source:"actual"},
+  48: {gdu:4.0, source:"actual"},
+  49: {gdu:5.0, source:"actual"},
+  50: {gdu:0.0, source:"actual"},
+  51: {gdu:0.0, source:"actual"},
+  52: {gdu:0.0, source:"actual"},
+  53: {gdu:0.0, source:"actual"},
+  54: {gdu:0.0, source:"actual"},
+  55: {gdu:0.0, source:"actual"},
+  56: {gdu:0.0, source:"actual"},
+  57: {gdu:0.0, source:"actual"},
+  58: {gdu:1.0, source:"actual"},
+  59: {gdu:3.0, source:"actual"},
+  60: {gdu:0.0, source:"actual"},
+  61: {gdu:0.0, source:"actual"},
+  62: {gdu:0.0, source:"actual"},
+  63: {gdu:0.0, source:"actual"},
+  64: {gdu:2.0, source:"actual"},
+  65: {gdu:1.0, source:"actual"},
+  66: {gdu:0.0, source:"actual"},
+  67: {gdu:5.0, source:"actual"},
+  68: {gdu:5.0, source:"actual"},
+  69: {gdu:0.0, source:"actual"},
+  70: {gdu:0.0, source:"actual"},
+  71: {gdu:0.0, source:"actual"},
+  72: {gdu:0.0, source:"actual"},
+  73: {gdu:0.0, source:"actual"},
+  74: {gdu:0.0, source:"actual"},
+  75: {gdu:0.0, source:"actual"},
+  76: {gdu:0.0, source:"actual"},
+  77: {gdu:0.0, source:"actual"},
+  78: {gdu:7.0, source:"actual"},
+  79: {gdu:10.0, source:"actual"},
+  80: {gdu:15.0, source:"actual"},
+  81: {gdu:16.0, source:"actual"},
+  82: {gdu:0.0, source:"actual"},
+  83: {gdu:1.0, source:"actual"},
+  84: {gdu:10.0, source:"actual"},
+  85: {gdu:7.0, source:"actual"},
+  86: {gdu:0.0, source:"actual"},
+  87: {gdu:1.0, source:"actual"},
+  88: {gdu:8.0, source:"actual"},
+  89: {gdu:14.0, source:"actual"},
+  90: {gdu:6.0, source:"actual"},
+  91: {gdu:0.0, source:"actual"},
+  92: {gdu:0.0, source:"actual"},
+  93: {gdu:0.0, source:"actual"},
+  94: {gdu:0.0, source:"actual"},
+  95: {gdu:1.0, source:"actual"},
+  96: {gdu:0.0, source:"actual"},
+  97: {gdu:0.0, source:"actual"},
+  98: {gdu:1.0, source:"actual"},
+  99: {gdu:0.0, source:"actual"},
+  100: {gdu:2.0, source:"actual"},
+  101: {gdu:4.0, source:"actual"},
+  102: {gdu:12.0, source:"actual"},
+  103: {gdu:14.0, source:"actual"},
+  104: {gdu:9.0, source:"actual"},
+  105: {gdu:8.0, source:"actual"},
+  106: {gdu:15.0, source:"actual"},
+  107: {gdu:8.0, source:"actual"},
+  108: {gdu:0.0, source:"actual"},
+  109: {gdu:0.0, source:"actual"},
+  110: {gdu:6.0, source:"actual"},
+  111: {gdu:13.0, source:"actual"},
+  112: {gdu:17.0, source:"actual"},
+  113: {gdu:11.0, source:"actual"},
+  114: {gdu:7.0, source:"actual"},
+  115: {gdu:1.0, source:"actual"},
+  116: {gdu:0.0, source:"actual"},
+  117: {gdu:5.0, source:"actual"},
+  118: {gdu:2.0, source:"actual"},
+  119: {gdu:1.0, source:"actual"},
+  120: {gdu:0.0, source:"actual"}
+  },
+  "Truman": {
+  1: {gdu:18.0, source:"actual"},
+  2: {gdu:0.0, source:"actual"},
+  3: {gdu:0.0, source:"actual"},
+  4: {gdu:0.0, source:"actual"},
+  5: {gdu:17.0, source:"actual"},
+  6: {gdu:0.0, source:"actual"},
+  7: {gdu:0.0, source:"actual"},
+  8: {gdu:0.0, source:"actual"},
+  9: {gdu:0.0, source:"actual"},
+  10: {gdu:4.0, source:"actual"},
+  11: {gdu:0.0, source:"actual"},
+  12: {gdu:0.0, source:"actual"},
+  13: {gdu:0.0, source:"actual"},
+  14: {gdu:3.0, source:"actual"},
+  15: {gdu:6.0, source:"actual"},
+  16: {gdu:15.0, source:"actual"},
+  17: {gdu:14.0, source:"actual"},
+  18: {gdu:0.0, source:"actual"},
+  19: {gdu:16.0, source:"actual"},
+  20: {gdu:7.0, source:"actual"},
+  21: {gdu:0.0, source:"actual"},
+  22: {gdu:0.0, source:"actual"},
+  23: {gdu:7.0, source:"actual"},
+  24: {gdu:18.0, source:"actual"},
+  25: {gdu:0.0, source:"actual"},
+  26: {gdu:0.0, source:"actual"},
+  27: {gdu:0.0, source:"actual"},
+  28: {gdu:0.0, source:"actual"},
+  29: {gdu:0.0, source:"actual"},
+  30: {gdu:0.0, source:"actual"},
+  31: {gdu:0.0, source:"actual"},
+  32: {gdu:0.0, source:"actual"},
+  33: {gdu:0.0, source:"actual"},
+  34: {gdu:0.0, source:"actual"},
+  35: {gdu:0.0, source:"actual"},
+  36: {gdu:0.0, source:"actual"},
+  37: {gdu:0.0, source:"actual"},
+  38: {gdu:0.0, source:"actual"},
+  39: {gdu:0.0, source:"actual"},
+  40: {gdu:0.0, source:"actual"},
+  41: {gdu:0.0, source:"actual"},
+  42: {gdu:0.0, source:"actual"},
+  43: {gdu:0.0, source:"actual"},
+  44: {gdu:1.0, source:"actual"},
+  45: {gdu:1.0, source:"actual"},
+  46: {gdu:3.0, source:"actual"},
+  47: {gdu:4.0, source:"actual"},
+  48: {gdu:2.0, source:"actual"},
+  49: {gdu:4.0, source:"actual"},
+  50: {gdu:0.0, source:"actual"},
+  51: {gdu:0.0, source:"actual"},
+  52: {gdu:0.0, source:"actual"},
+  53: {gdu:0.0, source:"actual"},
+  54: {gdu:0.0, source:"actual"},
+  55: {gdu:0.0, source:"actual"},
+  56: {gdu:0.0, source:"actual"},
+  57: {gdu:0.0, source:"actual"},
+  58: {gdu:2.0, source:"actual"},
+  59: {gdu:5.0, source:"actual"},
+  60: {gdu:0.0, source:"actual"},
+  61: {gdu:0.0, source:"actual"},
+  62: {gdu:0.0, source:"actual"},
+  63: {gdu:0.0, source:"actual"},
+  64: {gdu:0.0, source:"actual"},
+  65: {gdu:2.0, source:"actual"},
+  66: {gdu:2.0, source:"actual"},
+  67: {gdu:0.0, source:"actual"},
+  68: {gdu:8.0, source:"actual"},
+  69: {gdu:2.0, source:"actual"},
+  70: {gdu:0.0, source:"actual"},
+  71: {gdu:0.0, source:"actual"},
+  72: {gdu:0.0, source:"actual"},
+  73: {gdu:0.0, source:"actual"},
+  74: {gdu:0.0, source:"actual"},
+  75: {gdu:0.0, source:"actual"},
+  76: {gdu:0.0, source:"actual"},
+  77: {gdu:0.0, source:"actual"},
+  78: {gdu:0.0, source:"actual"},
+  79: {gdu:5.0, source:"actual"},
+  80: {gdu:5.0, source:"actual"},
+  81: {gdu:16.0, source:"actual"},
+  82: {gdu:0.0, source:"actual"},
+  83: {gdu:0.0, source:"actual"},
+  84: {gdu:2.0, source:"actual"},
+  85: {gdu:12.0, source:"actual"},
+  86: {gdu:1.0, source:"actual"},
+  87: {gdu:0.0, source:"actual"},
+  88: {gdu:5.0, source:"actual"},
+  89: {gdu:11.0, source:"actual"},
+  90: {gdu:18.0, source:"actual"},
+  91: {gdu:0.0, source:"actual"},
+  92: {gdu:0.0, source:"actual"},
+  93: {gdu:0.0, source:"actual"},
+  94: {gdu:0.0, source:"actual"},
+  95: {gdu:0.0, source:"actual"},
+  96: {gdu:4.0, source:"actual"},
+  97: {gdu:0.0, source:"actual"},
+  98: {gdu:0.0, source:"actual"},
+  99: {gdu:7.0, source:"actual"},
+  100: {gdu:0.0, source:"actual"},
+  101: {gdu:3.0, source:"actual"},
+  102: {gdu:6.0, source:"actual"},
+  103: {gdu:15.0, source:"actual"},
+  104: {gdu:14.0, source:"actual"},
+  105: {gdu:8.0, source:"actual"},
+  106: {gdu:9.0, source:"actual"},
+  107: {gdu:16.0, source:"actual"},
+  108: {gdu:7.0, source:"actual"},
+  109: {gdu:0.0, source:"actual"},
+  110: {gdu:0.0, source:"actual"},
+  111: {gdu:8.0, source:"actual"},
+  112: {gdu:15.0, source:"actual"},
+  113: {gdu:21.0, source:"actual"},
+  114: {gdu:12.0, source:"actual"},
+  115: {gdu:5.0, source:"actual"},
+  116: {gdu:3.0, source:"actual"},
+  117: {gdu:8.0, source:"actual"},
+  118: {gdu:5.0, source:"actual"},
+  119: {gdu:2.0, source:"actual"},
+  120: {gdu:0.0, source:"actual"}
+  },
+  "RedwoodFalls": {
+  1: {gdu:18.0, source:"actual"},
+  2: {gdu:0.0, source:"actual"},
+  3: {gdu:0.0, source:"actual"},
+  4: {gdu:0.0, source:"actual"},
+  5: {gdu:14.0, source:"actual"},
+  6: {gdu:0.0, source:"actual"},
+  7: {gdu:0.0, source:"actual"},
+  8: {gdu:0.0, source:"actual"},
+  9: {gdu:0.0, source:"actual"},
+  10: {gdu:3.0, source:"actual"},
+  11: {gdu:0.0, source:"actual"},
+  12: {gdu:0.0, source:"actual"},
+  13: {gdu:0.0, source:"actual"},
+  14: {gdu:4.0, source:"actual"},
+  15: {gdu:5.0, source:"actual"},
+  16: {gdu:17.0, source:"actual"},
+  17: {gdu:10.0, source:"actual"},
+  18: {gdu:0.0, source:"actual"},
+  19: {gdu:18.0, source:"actual"},
+  20: {gdu:1.0, source:"actual"},
+  21: {gdu:0.0, source:"actual"},
+  22: {gdu:0.0, source:"actual"},
+  23: {gdu:11.0, source:"actual"},
+  24: {gdu:18.0, source:"actual"},
+  25: {gdu:0.0, source:"actual"},
+  26: {gdu:0.0, source:"actual"},
+  27: {gdu:0.0, source:"actual"},
+  28: {gdu:0.0, source:"actual"},
+  29: {gdu:0.0, source:"actual"},
+  30: {gdu:0.0, source:"actual"},
+  31: {gdu:0.0, source:"actual"},
+  32: {gdu:0.0, source:"actual"},
+  33: {gdu:0.0, source:"actual"},
+  34: {gdu:0.0, source:"actual"},
+  35: {gdu:0.0, source:"actual"},
+  36: {gdu:0.0, source:"actual"},
+  37: {gdu:0.0, source:"actual"},
+  38: {gdu:0.0, source:"actual"},
+  39: {gdu:0.0, source:"actual"},
+  40: {gdu:0.0, source:"actual"},
+  41: {gdu:0.0, source:"actual"},
+  42: {gdu:0.0, source:"actual"},
+  43: {gdu:0.0, source:"actual"},
+  44: {gdu:1.0, source:"actual"},
+  45: {gdu:1.0, source:"actual"},
+  46: {gdu:4.0, source:"actual"},
+  47: {gdu:4.0, source:"actual"},
+  48: {gdu:2.0, source:"actual"},
+  49: {gdu:2.0, source:"actual"},
+  50: {gdu:0.0, source:"actual"},
+  51: {gdu:0.0, source:"actual"},
+  52: {gdu:0.0, source:"actual"},
+  53: {gdu:0.0, source:"actual"},
+  54: {gdu:0.0, source:"actual"},
+  55: {gdu:0.0, source:"actual"},
+  56: {gdu:0.0, source:"actual"},
+  57: {gdu:0.0, source:"actual"},
+  58: {gdu:0.0, source:"actual"},
+  59: {gdu:2.0, source:"actual"},
+  60: {gdu:0.0, source:"actual"},
+  61: {gdu:0.0, source:"actual"},
+  62: {gdu:0.0, source:"actual"},
+  63: {gdu:0.0, source:"actual"},
+  64: {gdu:0.0, source:"actual"},
+  65: {gdu:1.0, source:"actual"},
+  66: {gdu:0.0, source:"actual"},
+  67: {gdu:0.0, source:"actual"},
+  68: {gdu:7.0, source:"actual"},
+  69: {gdu:0.0, source:"actual"},
+  70: {gdu:0.0, source:"actual"},
+  71: {gdu:0.0, source:"actual"},
+  72: {gdu:0.0, source:"actual"},
+  73: {gdu:0.0, source:"actual"},
+  74: {gdu:0.0, source:"actual"},
+  75: {gdu:0.0, source:"actual"},
+  76: {gdu:0.0, source:"actual"},
+  77: {gdu:0.0, source:"actual"},
+  78: {gdu:1.0, source:"actual"},
+  79: {gdu:7.0, source:"actual"},
+  80: {gdu:6.0, source:"actual"},
+  81: {gdu:13.0, source:"actual"},
+  82: {gdu:0.0, source:"actual"},
+  83: {gdu:0.0, source:"actual"},
+  84: {gdu:3.0, source:"actual"},
+  85: {gdu:13.0, source:"actual"},
+  86: {gdu:0.0, source:"actual"},
+  87: {gdu:0.0, source:"actual"},
+  88: {gdu:6.0, source:"actual"},
+  89: {gdu:10.0, source:"actual"},
+  90: {gdu:15.0, source:"actual"},
+  91: {gdu:0.0, source:"actual"},
+  92: {gdu:0.0, source:"actual"},
+  93: {gdu:0.0, source:"actual"},
+  94: {gdu:0.0, source:"actual"},
+  95: {gdu:0.0, source:"actual"},
+  96: {gdu:3.0, source:"actual"},
+  97: {gdu:0.0, source:"actual"},
+  98: {gdu:0.0, source:"actual"},
+  99: {gdu:2.0, source:"actual"},
+  100: {gdu:0.0, source:"actual"},
+  101: {gdu:4.0, source:"actual"},
+  102: {gdu:5.0, source:"actual"},
+  103: {gdu:17.0, source:"actual"},
+  104: {gdu:10.0, source:"actual"},
+  105: {gdu:6.0, source:"actual"},
+  106: {gdu:10.0, source:"actual"},
+  107: {gdu:18.0, source:"actual"},
+  108: {gdu:1.0, source:"actual"},
+  109: {gdu:0.0, source:"actual"},
+  110: {gdu:0.0, source:"actual"},
+  111: {gdu:10.0, source:"actual"},
+  112: {gdu:14.0, source:"actual"},
+  113: {gdu:22.0, source:"actual"},
+  114: {gdu:13.0, source:"actual"},
+  115: {gdu:5.0, source:"actual"},
+  116: {gdu:0.0, source:"actual"},
+  117: {gdu:3.0, source:"actual"},
+  118: {gdu:1.0, source:"actual"},
+  119: {gdu:1.0, source:"actual"},
+  120: {gdu:0.0, source:"actual"}
+  }
+};
+
+
+// ============================================================
+// LIVE DATA STORE  liveGDU[locIdx] = {doy: {gdu, source}}
+// ============================================================
+var liveGDU = [null, null, null, null, null];
+var dataStatus = ['init','init','init','init','init']; // init|loading|live|error
+
+var TODAY = new Date();
+var TODAY_DOY = (function(){
+  var s = new Date(TODAY.getFullYear(), 0, 0);
+  return Math.floor((TODAY - s) / 86400000);
+}());
+var YEAR = TODAY.getFullYear();
+
+function todayStr() {
+  return YEAR + '-' + pad2(TODAY.getMonth()+1) + '-' + pad2(TODAY.getDate());
+}
+function pad2(n) { return n < 10 ? '0'+n : ''+n; }
+function dateToStr(y,m,d) { return y+'-'+pad2(m)+'-'+pad2(d); }
+
+function dateToDOY(dateStr) {
+  var p = dateStr.split('-');
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  var s = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - s) / 86400000);
+}
+
+function TODAY_LABEL() {
+  var dt = doyToDate(TODAY_DOY);
+  return MONTHS[dt.m] + ' ' + dt.d;
+}
+
+// ============================================================
+// PLANTING DATE DROPDOWN  (Apr 1 - Jun 15)
+// ============================================================
+var plantDOY = 114; // default Apr 24
+
+function buildPDDropdown() {
+  var sel = document.getElementById('pd-select');
+  sel.innerHTML = '';
+  // Apr 1 = DOY 91, Jun 15 = DOY 166
+  var months = [4,5,6];
+  var daysInMo = [30, 31, 15]; // Apr all, May all, Jun 1-15
+  for (var mi = 0; mi < months.length; mi++) {
+    var mo = months[mi];
+    var maxD = daysInMo[mi];
+    for (var d = 1; d <= maxD; d++) {
+      var doy = dateToMDtoDOY(mo, d);
+      var opt = document.createElement('option');
+      opt.value = doy;
+      opt.textContent = MONTHS[mo] + ' ' + d;
+      if (doy === plantDOY) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+}
+
+function dateToMDtoDOY(m, d) {
+  var days = DAYS_IN_MO.slice();
+  var sum = 0;
+  for (var i = 0; i < m-1; i++) sum += days[i];
+  return sum + d;
+}
+
+function onPDChange() {
+  plantDOY = parseInt(document.getElementById('pd-select').value);
+  updateAll();
+}
+
+// ============================================================
+// FETCH: ACIS actual GDDs for current year
+// ============================================================
+function fetchACIS(locIdx, callback) {
+  var loc = LOCS[locIdx];
+  var startDate = YEAR + '-01-01';
+  var endDate   = todayStr();
+  var params = {
+    sid:   loc.acis,
+    sdate: startDate,
+    edate: endDate,
+    elems: [{name:'maxt'},{name:'mint'},{name:'gdd50'}]
+  };
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'https://data.rcc-acis.org/StnData', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.timeout = 12000;
+  xhr.onload = function() {
+    if (xhr.status !== 200) { callback('HTTP '+xhr.status, null); return; }
+    try {
+      var resp = JSON.parse(xhr.responseText);
+      callback(null, resp.data || []);
+    } catch(e) { callback('Parse error', null); }
+  };
+  xhr.onerror   = function(){ callback('Network error', null); };
+  xhr.ontimeout = function(){ callback('Timeout', null); };
+  xhr.send(JSON.stringify(params));
+}
+
+// ============================================================
+// FETCH: Open-Meteo 10-day forecast
+// Uses free Open-Meteo API — no key needed
+// ============================================================
+function fetchForecast(locIdx, callback) {
+  var loc = LOCS[locIdx];
+  // tomorrow through +10 days
+  var tomorrow = new Date(TODAY);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  var futureDate = new Date(TODAY);
+  futureDate.setDate(futureDate.getDate() + 10);
+  var startStr = futureDate.getFullYear()+'-'+pad2(futureDate.getMonth()+1)+'-'+pad2(tomorrow.getDate());
+  var endStr   = futureDate.getFullYear()+'-'+pad2(futureDate.getMonth()+1)+'-'+pad2(futureDate.getDate());
+
+  var url = 'https://api.open-meteo.com/v1/forecast' +
+    '?latitude='  + loc.lat +
+    '&longitude=' + loc.lon +
+    '&daily=temperature_2m_max,temperature_2m_min' +
+    '&temperature_unit=fahrenheit' +
+    '&timezone=America%2FChicago' +
+    '&forecast_days=11';
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 12000;
+  xhr.onload = function() {
+    if (xhr.status !== 200) { callback('HTTP '+xhr.status, null); return; }
+    try {
+      var resp = JSON.parse(xhr.responseText);
+      callback(null, resp.daily);
+    } catch(e) { callback('Parse error', null); }
+  };
+  xhr.onerror   = function(){ callback('Network error', null); };
+  xhr.ontimeout = function(){ callback('Timeout', null); };
+  xhr.send();
+}
+
+function gdd50(tmax, tmin) {
+  return Math.max(0, (Math.min(tmax, 86) + Math.max(tmin, 50)) / 2 - 50);
+}
+
+// ============================================================
+// MAIN LIVE DATA LOADER
+// Fetches ACIS actuals + Open-Meteo forecast for one location
+// ============================================================
+function fetchOneLoc(locIdx, onDone) {
+  dataStatus[locIdx] = 'loading';
+  var loc = LOCS[locIdx];
+  var store = {};
+
+  // Seed with CSV data as fallback (already have through Apr 30)
+  var csvSeed = CSV_2026[loc.key] || {};
+  for (var k in csvSeed) {
+    if (csvSeed.hasOwnProperty(k)) store[parseInt(k)] = csvSeed[k];
+  }
+
+  var acisError = null, fcstError = null;
+  var done = 0;
+
+  function finish() {
+    done++;
+    if (done < 2) return;
+    liveGDU[locIdx] = store;
+    dataStatus[locIdx] = (acisError && fcstError) ? 'error' : 'live';
+    if (onDone) onDone(locIdx);
+  }
+
+  // 1. ACIS actual data
+  fetchACIS(locIdx, function(err, rows) {
+    if (!err && rows && rows.length > 0) {
+      for (var i = 0; i < rows.length; i++) {
+        var row    = rows[i];
+        var dstr   = row[0];
+        var gddRaw = row[2];
+        if (!gddRaw || gddRaw === 'M' || gddRaw === 'T') continue;
+        var gddVal = parseFloat(gddRaw);
+        if (isNaN(gddVal)) continue;
+        var doy = dateToDOY(dstr);
+        store[doy] = {gdu: Math.round(gddVal * 10) / 10, source: 'actual'};
+      }
+    } else {
+      acisError = err || 'no data';
+    }
+    finish();
+  });
+
+  // 2. Open-Meteo 10-day forecast
+  fetchForecast(locIdx, function(err, daily) {
+    if (!err && daily && daily.time) {
+      var todStr = todayStr();
+      for (var i = 0; i < daily.time.length; i++) {
+        var dstr  = daily.time[i];
+        if (dstr <= todStr) continue; // only future dates
+        var tmax = daily.temperature_2m_max[i];
+        var tmin = daily.temperature_2m_min[i];
+        if (tmax === null || tmin === null) continue;
+        var gdd  = Math.round(gdd50(tmax, tmin) * 10) / 10;
+        var doy  = dateToDOY(dstr);
+        store[doy] = {gdu: gdd, source: 'forecast'};
+      }
+    } else {
+      fcstError = err || 'no data';
+    }
+    finish();
+  });
+}
+
+// Load all 5 locations — primary loc first, rest in background
+function fetchAllLive() {
+  setStatus('loading', 'Fetching live GDDs + 10-day forecast...');
+  fetchOneLoc(currentLoc, function(idx) {
+    var acc = 0;
+    for (var d = 91; d <= TODAY_DOY; d++) acc += getDailyGDU(idx, d);
+    setStatus('live', 'Live data loaded \u2014 ' + LOCS[idx].short + ' Apr\u2013today: ' + Math.round(acc) + ' GDU. Forecast through +10 days.');
+    updateAll();
+    // Background load others
+    for (var i = 0; i < 5; i++) {
+      if (i !== currentLoc) (function(li){ fetchOneLoc(li, function(){}); })(i);
+    }
+  });
+}
+
+function setStatus(type, msg) {
+  var dot = document.getElementById('status-dot');
+  var txt = document.getElementById('status-text');
+  var badge = document.getElementById('api-badge');
+  dot.className = 'dot ' + type;
+  txt.textContent = msg;
+  txt.style.color = type==='live'?'#1a5c3a':type==='error'?'#c0392b':type==='partial'?'#1b4f8a':'#6b6560';
+  if (badge) {
+    badge.textContent = type==='live'?'Live data: ACIS + Open-Meteo':type==='loading'?'Live data: loading\u2026':'Live data: offline (CSV fallback)';
+    badge.className   = type==='live'?'badge live':type==='loading'?'badge loading':'badge error';
+  }
+}
+
+// ============================================================
+// GDU LOOKUP PRIORITY: live ACIS > CSV seed > hist 2020-2025
+// ============================================================
+function getDailyGDU(locIdx, doy) {
+  var live = liveGDU[locIdx];
+  if (live && doy in live) return live[doy].gdu;
+  // CSV seed
+  var csvKey = LOCS[locIdx].key;
+  var csv = CSV_2026[csvKey] || {};
+  if (doy in csv) return csv[doy].gdu;
+  // Historical 2020-2025 average
+  var hist = HIST_BY_LOC[locIdx];
+  return (hist && hist[doy] !== undefined) ? hist[doy] : 0;
+}
+
+function getGDUSource(locIdx, doy) {
+  var live = liveGDU[locIdx];
+  if (live && doy in live) return live[doy].source; // 'actual' or 'forecast'
+  var csvKey = LOCS[locIdx].key;
+  var csv = CSV_2026[csvKey] || {};
+  if (doy in csv) return 'actual';
+  return 'hist';
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+function doyToDate(doy) {
+  var d=doy, m=0;
+  for (var i=1;i<=12;i++){if(d<=DAYS_IN_MO[i-1]){m=i;break;}d-=DAYS_IN_MO[i-1];}
+  return {m:m,d:d};
+}
+function fmt(doy)     { if(!doy)return'\u2014';var r=doyToDate(doy);return MONTHS[r.m]+' '+r.d; }
+function fmtFull(doy) { if(!doy)return'\u2014';var r=doyToDate(doy);return MONTHS_FULL[r.m]+' '+r.d; }
+
+function getDayForGDU(locIdx, startDOY, target) {
+  var acc = 0;
+  for (var doy = startDOY+1; doy <= 365; doy++) {
+    acc += getDailyGDU(locIdx, doy);
+    if (acc >= target) return doy;
+  }
+  return null;
+}
+
+function computeAll(h, locIdx) {
+  var silkDOY = getDayForGDU(locIdx, plantDOY, h.gduSilk);
+  var blDOY   = getDayForGDU(locIdx, plantDOY, h.gduBL);
+  var harvDOY = blDOY ? getDayForGDU(locIdx, blDOY, GDU_DRY) : null;
+  return {silkDOY:silkDOY, blDOY:blDOY, harvDOY:harvDOY};
+}
+
+function plantLabel() {
+  var dt = doyToDate(plantDOY);
+  return MONTHS[dt.m] + ' ' + dt.d;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+var currentLoc=0, currentTab='chart', showSilk=true, showHarv=true, showBL=true, sortMode='rm', chartInst=null;
+
+// All hybrids selected by default
+var selectedHybrids = {};
+(function(){ for(var i=0;i<HYBRIDS.length;i++) selectedHybrids[HYBRIDS[i].label]=true; }());
+
+// ============================================================
+// HYBRID SELECTOR
+// ============================================================
+function buildHybridList() {
+  var list = document.getElementById('hybrid-dd-list');
+  list.innerHTML = '';
+  for (var i=0;i<HYBRIDS.length;i++) {
+    var h = HYBRIDS[i];
+    var item = document.createElement('label');
+    item.className = 'hybrid-dd-item';
+    item.setAttribute('data-label', h.label);
+    item.setAttribute('data-rm', h.rm);
+    item.innerHTML =
+      '<input type="checkbox" value="'+h.label+'" '+(selectedHybrids[h.label]?'checked':'')+' onchange="onHybridCheck(this)">'+
+      '<span class="h-label">'+h.label+'</span>'+
+      '<span class="h-rm">'+h.rm+'RM</span>';
+    list.appendChild(item);
+  }
+  updateHybridBtnLabel();
+}
+
+function onHybridCheck(cb) {
+  selectedHybrids[cb.value] = cb.checked;
+  updateHybridBtnLabel();
+  updateAll();
+}
+
+function updateHybridBtnLabel() {
+  var cnt = Object.keys(selectedHybrids).filter(function(k){return selectedHybrids[k];}).length;
+  document.getElementById('hybrid-count').textContent = cnt;
+  document.getElementById('hybrid-btn-label').textContent = cnt === HYBRIDS.length ? 'All '+HYBRIDS.length+' hybrids' : cnt === 1 ? '1 hybrid selected' : cnt+' hybrids selected';
+}
+
+function filterHybrids() {
+  var q = document.getElementById('hybrid-search').value.toLowerCase();
+  var items = document.querySelectorAll('#hybrid-dd-list .hybrid-dd-item');
+  for (var i=0;i<items.length;i++) {
+    var lbl = items[i].getAttribute('data-label').toLowerCase();
+    var rm  = items[i].getAttribute('data-rm');
+    items[i].style.display = (lbl.indexOf(q)>-1 || rm.indexOf(q)>-1) ? '' : 'none';
+  }
+}
+
+function selectAllHybrids() {
+  for(var i=0;i<HYBRIDS.length;i++) selectedHybrids[HYBRIDS[i].label]=true;
+  var cbs=document.querySelectorAll('#hybrid-dd-list input[type=checkbox]');
+  for(var i=0;i<cbs.length;i++) cbs[i].checked=true;
+  updateHybridBtnLabel(); updateAll();
+}
+
+function selectNoneHybrids() {
+  for(var i=0;i<HYBRIDS.length;i++) selectedHybrids[HYBRIDS[i].label]=false;
+  var cbs=document.querySelectorAll('#hybrid-dd-list input[type=checkbox]');
+  for(var i=0;i<cbs.length;i++) cbs[i].checked=false;
+  updateHybridBtnLabel(); updateAll();
+}
+
+function selectByRM(lo, hi) {
+  for(var i=0;i<HYBRIDS.length;i++) selectedHybrids[HYBRIDS[i].label]=(HYBRIDS[i].rm>=lo&&HYBRIDS[i].rm<=hi);
+  var items=document.querySelectorAll('#hybrid-dd-list .hybrid-dd-item');
+  for(var i=0;i<items.length;i++){
+    var rm=parseInt(items[i].getAttribute('data-rm'));
+    var cb=items[i].querySelector('input');
+    cb.checked=(rm>=lo&&rm<=hi);
+  }
+  updateHybridBtnLabel(); updateAll();
+}
+
+function toggleHybridPanel(e) {
+  e.stopPropagation();
+  document.getElementById('hybrid-panel').classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('hybrid-dropdown');
+  if (dd && !dd.contains(e.target)) {
+    document.getElementById('hybrid-panel').classList.remove('open');
+  }
+});
+
+// ============================================================
+// UI CONTROLS
+// ============================================================
+function switchTab(tab) {
+  currentTab=tab;
+  document.getElementById('panel-chart').classList.toggle('active', tab==='chart');
+  document.getElementById('panel-gdu').classList.toggle('active', tab==='gdu');
+  document.getElementById('tab-chart-btn').classList.toggle('active', tab==='chart');
+  document.getElementById('tab-gdu-btn').classList.toggle('active', tab==='gdu');
+  document.getElementById('layer-controls').style.display = tab==='chart'?'':'none';
+  document.getElementById('sort-controls').style.display  = tab==='chart'?'':'none';
+  if (tab==='gdu') updateGduCalendar();
+}
+
+function setLoc(idx) {
+  currentLoc=idx;
+  var btns=document.querySelectorAll('#loc-btns .btn');
+  for (var i=0;i<btns.length;i++) btns[i].classList.toggle('active',i===idx);
+  document.getElementById('loc-display').textContent=LOCS[idx].name;
+  if (!liveGDU[idx]) {
+    setStatus('loading','Loading '+LOCS[idx].short+'...');
+    fetchOneLoc(idx, function(li){
+      var acc=0; for(var d=91;d<=TODAY_DOY;d++) acc+=getDailyGDU(li,d);
+      setStatus('live', LOCS[li].short+' loaded. GDU Apr\u2013today: '+Math.round(acc)+'. Forecast +10 days.');
+      updateAll();
+    });
+  } else {
+    updateAll();
+  }
+}
+
+function toggleView(type) {
+  if(type==='silk'){showSilk=!showSilk;document.getElementById('btn-silk').classList.toggle('active',showSilk);}
+  else if(type==='bl'){showBL=!showBL;document.getElementById('btn-bl').classList.toggle('active',showBL);}
+  else{showHarv=!showHarv;document.getElementById('btn-harv').classList.toggle('active',showHarv);}
+  updateAll();
+}
+
+function setSort(mode) {
+  sortMode=mode;
+  var ids=['rm','silk','harv','bl','days','gduSilk','gduBL'];
+  for (var i=0;i<ids.length;i++){var el=document.getElementById('sort-'+ids[i]);if(el)el.classList.toggle('active',ids[i]===mode);}
+  updateAll();
+}
+
+function getSorted() {
+  var list = HYBRIDS.filter(function(h){ return selectedHybrids[h.label]; });
+  list.sort(function(a,b){
+    if(sortMode==='rm')      return a.rm-b.rm;
+    if(sortMode==='gduSilk') return a.gduSilk-b.gduSilk;
+    if(sortMode==='gduBL')   return a.gduBL-b.gduBL;
+    var ra=computeAll(a,currentLoc), rb=computeAll(b,currentLoc);
+    if(sortMode==='silk') return (ra.silkDOY||999)-(rb.silkDOY||999);
+    if(sortMode==='bl')   return (ra.blDOY||999)-(rb.blDOY||999);
+    return (ra.harvDOY||999)-(rb.harvDOY||999);
+  });
+  return list;
+}
+
+// ============================================================
+// UPDATE FUNCTIONS
+// ============================================================
+function updateStats() {
+  var minSilk=999,sumSilk=0,sumHarv=0,maxHarv=0,cnt=0;
+  for (var hi=0;hi<HYBRIDS.length;hi++){
+    var r=computeAll(HYBRIDS[hi],currentLoc);
+    if(r.silkDOY){minSilk=Math.min(minSilk,r.silkDOY);sumSilk+=r.silkDOY;cnt++;}
+    if(r.harvDOY){maxHarv=Math.max(maxHarv,r.harvDOY);sumHarv+=r.harvDOY;}
+  }
+  var acc=0; for(var d=plantDOY+1;d<=TODAY_DOY;d++) acc+=getDailyGDU(currentLoc,d); acc=Math.round(acc);
+  var src=liveGDU[currentLoc]?'ACIS live':'CSV';
+  document.getElementById('stats-grid').innerHTML=
+    '<div class="stat-card"><div class="stat-label">GDU since planting</div><div class="stat-value">'+acc+'</div><div class="stat-sub">'+plantLabel()+' \u2192 '+TODAY_LABEL()+' ('+src+')</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Earliest silk</div><div class="stat-value">'+fmt(minSilk)+'</div><div class="stat-sub">across all hybrids</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Avg silk date</div><div class="stat-value">'+fmt(Math.round(sumSilk/cnt))+'</div><div class="stat-sub">all hybrids</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Avg harvest 21%</div><div class="stat-value">'+fmt(Math.round(sumHarv/cnt))+'</div><div class="stat-sub">all hybrids</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Latest harvest</div><div class="stat-value">'+fmt(maxHarv)+'</div><div class="stat-sub">P14830</div></div>';
+}
+
+function updateLegend() {
+  var html='';
+  if(showSilk) html+='<span class="legend-item"><span class="l-dot" style="background:#1b4f8a"></span>Silk date</span>';
+  if(showBL)   html+='<span class="legend-item"><span class="l-dot" style="background:#8a2c10"></span>Blacklayer</span>';
+  if(showHarv) html+='<span class="legend-item"><span class="l-dot" style="background:#1b4f8a;opacity:.4;border:1.5px solid #1b4f8a"></span>Harvest 21%</span>';
+  html+='<span class="legend-item"><span class="l-line"></span>Today ('+TODAY_LABEL()+')</span>';
+  html+='<span class="legend-item"><span class="l-dash"></span>10-day forecast</span>';
+  document.getElementById('legend-row').innerHTML=html;
+  document.getElementById('chart-subtitle').textContent=LOCS[currentLoc].name+' \u2014 planted '+plantLabel();
+}
+
+function updateChart() {
+  var sorted=getSorted();
+  var labels=sorted.map(function(h){return h.label;});
+  var silkData=[], blData=[], harvData=[];
+  for(var i=0;i<sorted.length;i++){
+    var r=computeAll(sorted[i],currentLoc);
+    silkData.push(r.silkDOY||null);
+    blData.push(r.blDOY||null);
+    harvData.push(r.harvDOY||null);
+  }
+  var datasets=[];
+  if(showSilk) datasets.push({label:'Silk',data:silkData,backgroundColor:'#1b4f8a',borderColor:'#1b4f8a',borderWidth:0,borderRadius:3,categoryPercentage:0.55,barPercentage:0.6});
+  if(showBL)   datasets.push({label:'Blacklayer',data:blData,backgroundColor:'rgba(138,44,16,0.7)',borderColor:'#8a2c10',borderWidth:0,borderRadius:3,categoryPercentage:0.55,barPercentage:0.6});
+  if(showHarv) datasets.push({label:'Harvest',data:harvData,backgroundColor:'rgba(27,79,138,0.15)',borderColor:'#1b4f8a',borderWidth:1,borderRadius:3,categoryPercentage:0.55,barPercentage:0.6});
+
+  var wrapH=Math.max(300,sorted.length*40+80);
+  document.querySelector('.chart-wrap').style.height=wrapH+'px';
+  if(chartInst){chartInst.destroy();chartInst=null;}
+
+  var ml=[{doy:152,l:'Jun'},{doy:182,l:'Jul'},{doy:213,l:'Aug'},{doy:244,l:'Sep'},{doy:274,l:'Oct'},{doy:305,l:'Nov'}];
+  var tdoy=TODAY_DOY;
+  // 10-day forecast boundary DOY
+  var fcstStartDOY = TODAY_DOY + 1;
+  var fcstEndDOY   = TODAY_DOY + 10;
+
+  chartInst=new Chart(document.getElementById('mainChart').getContext('2d'),{
+    type:'bar',data:{labels:labels,datasets:datasets},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:200},
+      layout:{padding:{right:22,left:2,top:20,bottom:0}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{enabled:false,external:function(ctx){
+          var tt=document.getElementById('tooltip');
+          if(ctx.tooltip.opacity===0){tt.style.display='none';return;}
+          var dp=ctx.tooltip.dataPoints&&ctx.tooltip.dataPoints[0];if(!dp)return;
+          var h=null;for(var i=0;i<HYBRIDS.length;i++){if(HYBRIDS[i].label===dp.label){h=HYBRIDS[i];break;}}if(!h)return;
+          var r=computeAll(h,currentLoc);
+          var accNow=0;for(var d=plantDOY+1;d<=TODAY_DOY;d++) accNow+=getDailyGDU(currentLoc,d);
+          var pctSilk=h.gduSilk>0?Math.round(Math.min(100,accNow/h.gduSilk*100)):0;
+          var pctBL  =h.gduBL  >0?Math.round(Math.min(100,accNow/h.gduBL  *100)):0;
+          tt.innerHTML='<div class="tt-title">'+h.label+'</div>'+
+            '<div class="tt-row"><span class="tt-label">RM</span><span class="tt-val">'+h.rm+'</span></div>'+
+            '<div class="tt-row"><span class="tt-label">GDU to silk</span><span class="tt-val">'+h.gduSilk+' ('+pctSilk+'% done)</span></div>'+
+            '<div class="tt-row"><span class="tt-label">GDU to BL</span><span class="tt-val">'+h.gduBL+' ('+pctBL+'% done)</span></div>'+
+            '<div style="border-top:.5px solid #e0ddd6;margin:4px 0"></div>'+
+            '<div class="tt-row"><span class="tt-label">Silk</span><span class="tt-val">'+fmtFull(r.silkDOY)+'</span></div>'+
+            '<div class="tt-row"><span class="tt-label">Blacklayer</span><span class="tt-val">'+fmtFull(r.blDOY)+'</span></div>'+
+            '<div class="tt-row"><span class="tt-label">Harvest 21%</span><span class="tt-val">'+fmtFull(r.harvDOY)+'</span></div>'+
+            '<div class="tt-row"><span class="tt-label">Days to harvest</span><span class="tt-val">'+(r.harvDOY?(r.harvDOY-plantDOY)+'d':'\u2014')+'</span></div>';
+          var rect=ctx.chart.canvas.getBoundingClientRect();
+          var tx=rect.left+ctx.tooltip.caretX+14,ty=rect.top+ctx.tooltip.caretY-20+window.scrollY;
+          if(tx+235>window.innerWidth) tx=rect.left+ctx.tooltip.caretX-249;
+          tt.style.left=tx+'px';tt.style.top=ty+'px';tt.style.display='block';
+        }}
+      },
+      scales:{
+        x:{min:plantDOY,max:Math.min(365,plantDOY+220),
+          grid:{color:'rgba(0,0,0,0.05)'},
+          ticks:{color:'#9e9890',font:{size:10,family:'IBM Plex Mono, monospace'},autoSkip:false,maxTicksLimit:12,
+            callback:function(v){for(var i=0;i<ml.length;i++){if(Math.abs(ml[i].doy-v)<2)return ml[i].l;}return '';}}},
+        y:{grid:{display:false},ticks:{color:'#444',font:{size:11,family:'IBM Plex Mono, monospace'}}}
+      }
+    },
+    plugins:[{id:'deco',afterDraw:function(chart){
+      var ctx=chart.ctx,xs=chart.scales.x,ca=chart.chartArea;
+      // Month gridlines
+      for(var i=0;i<ml.length;i++){
+        var mx=xs.getPixelForValue(ml[i].doy);
+        if(mx<ca.left||mx>ca.right) continue;
+        ctx.save();ctx.beginPath();ctx.moveTo(mx,ca.top);ctx.lineTo(mx,ca.bottom);
+        ctx.strokeStyle='rgba(0,0,0,0.07)';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();
+        ctx.fillStyle='#bbb';ctx.font='9px IBM Plex Mono, monospace';ctx.fillText(ml[i].l,mx+2,ca.bottom+14);ctx.restore();
+      }
+      // Today line
+      var todX=xs.getPixelForValue(tdoy);
+      if(todX>=ca.left&&todX<=ca.right){
+        ctx.save();ctx.beginPath();ctx.moveTo(todX,ca.top);ctx.lineTo(todX,ca.bottom);
+        ctx.strokeStyle='#c0392b';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();
+        ctx.fillStyle='#c0392b';ctx.font='bold 10px IBM Plex Mono, monospace';
+        ctx.fillText(TODAY_LABEL(),todX+3,ca.top-4);ctx.restore();
+      }
+      // 10-day forecast shading
+      var fcstX1=xs.getPixelForValue(fcstStartDOY),fcstX2=xs.getPixelForValue(fcstEndDOY);
+      if(fcstX1<ca.right&&fcstX2>ca.left){
+        ctx.save();ctx.fillStyle='rgba(200,168,75,0.07)';
+        ctx.fillRect(Math.max(fcstX1,ca.left),ca.top,Math.min(fcstX2,ca.right)-Math.max(fcstX1,ca.left),ca.height);
+        ctx.strokeStyle='rgba(200,168,75,0.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(fcstX1,ca.top);ctx.lineTo(fcstX1,ca.bottom);ctx.stroke();
+        ctx.fillStyle='#c8a84b';ctx.font='9px IBM Plex Mono, monospace';
+        ctx.textAlign='left';ctx.fillText('Forecast',fcstX1+36,ca.top-4);
+        ctx.restore();
+      }
+      // Frost risk zone Oct 1+ (DOY 274)
+      var fx=xs.getPixelForValue(274),ex=xs.getPixelForValue(Math.min(365,plantDOY+220));
+      if(fx<ca.right&&fx>ca.left){
+        ctx.save();ctx.fillStyle='rgba(200,168,75,0.06)';ctx.fillRect(fx,ca.top,Math.min(ex,ca.right)-fx,ca.height);
+        ctx.strokeStyle='rgba(200,168,75,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(fx,ca.top);ctx.lineTo(fx,ca.bottom);ctx.stroke();
+        ctx.fillStyle='#c8a84b';ctx.font='9px IBM Plex Mono, monospace';ctx.fillText('Frost risk',fx+3,ca.top+23);ctx.restore();
+      }
+    }}]
+  });
+}
+
+function updateTable() {
+  document.getElementById('table-label').textContent='Hybrid detail \u2014 '+plantLabel()+' planting \u2014 '+LOCS[currentLoc].name;
+  var sorted=getSorted();
+
+  // Collect all date values for min/max range (for color scaling)
+  var silkDOYs=[], blDOYs=[], harvDOYs=[];
+  for(var i=0;i<sorted.length;i++){
+    var r=computeAll(sorted[i],currentLoc);
+    if(r.silkDOY) silkDOYs.push(r.silkDOY);
+    if(r.blDOY)   blDOYs.push(r.blDOY);
+    if(r.harvDOY) harvDOYs.push(r.harvDOY);
+  }
+  var silkMin=Math.min.apply(null,silkDOYs), silkMax=Math.max.apply(null,silkDOYs);
+  var blMin  =Math.min.apply(null,blDOYs),   blMax  =Math.max.apply(null,blDOYs);
+  var harvMin=Math.min.apply(null,harvDOYs), harvMax=Math.max.apply(null,harvDOYs);
+
+  // Returns a background color: light->dark blue scale
+  // t=0 earliest (lightest), t=1 latest (darkest)
+  function dateBg(doy, min, max) {
+    if(!doy || max===min) return '';
+    var t = (doy - min) / (max - min);
+    // Light blue (#dce8f5) at t=0, deep blue (#1b4f8a) at t=1
+    var r = Math.round(220 + (27  - 220) * t);
+    var g = Math.round(232 + (79  - 232) * t);
+    var b = Math.round(245 + (138 - 245) * t);
+    return 'background:rgb('+r+','+g+','+b+');color:'+(t>0.55?'#fff':'#1a1814')+';';
+  }
+
+  var html='';
+  for(var hi=0;hi<sorted.length;hi++){
+    var h=sorted[hi],r=computeAll(h,currentLoc),days=r.harvDOY?(r.harvDOY-plantDOY)+'d':'\u2014';
+    var silkStyle = dateBg(r.silkDOY, silkMin, silkMax);
+    var blStyle   = dateBg(r.blDOY,   blMin,   blMax);
+    var harvStyle = dateBg(r.harvDOY, harvMin, harvMax);
+    html+='<tr>'+
+      '<td><span class="hybrid-name">'+h.label+'</span> <span class="rm-badge">'+h.rm+'RM</span></td>'+
+      '<td class="date-cell">'+h.gduSilk+'</td>'+
+      '<td class="date-cell">'+h.gduBL+'</td>'+
+      '<td class="date-cell" style="'+silkStyle+'border-radius:3px;padding:3px 8px">'+fmt(r.silkDOY)+'</td>'+
+      '<td class="date-cell" style="'+blStyle  +'border-radius:3px;padding:3px 8px">'+fmt(r.blDOY)+'</td>'+
+      '<td class="date-cell" style="'+harvStyle+'border-radius:3px;padding:3px 8px;font-weight:600">'+fmt(r.harvDOY)+'</td>'+
+      '<td class="days-cell">'+days+'</td></tr>';
+  }
+  document.getElementById('table-body').innerHTML=html;
+}
+
+function exportToExcel() {
+  var sorted=getSorted();
+  var rows=[['Hybrid','RM','GDU to Silk','GDU to Blacklayer','Silk Date','Blacklayer Date','Harvest 21%','Days Plant\u2192Harvest','Location','Planting Date']];
+  for(var i=0;i<sorted.length;i++){
+    var h=sorted[i],r=computeAll(h,currentLoc);
+    rows.push([
+      h.label,
+      h.rm,
+      h.gduSilk,
+      h.gduBL,
+      fmtFull(r.silkDOY),
+      fmtFull(r.blDOY),
+      fmtFull(r.harvDOY),
+      r.harvDOY?(r.harvDOY-plantDOY):'',
+      LOCS[currentLoc].name,
+      plantLabel()+' 2026'
+    ]);
+  }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  // Column widths
+  ws['!cols'] = [{wch:12},{wch:5},{wch:12},{wch:18},{wch:12},{wch:16},{wch:12},{wch:20},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Hybrid Detail');
+  // Add a metadata sheet
+  var meta=[
+    ['Pioneer Corn Growth Chart Export'],
+    ['Generated', new Date().toLocaleDateString()],
+    ['Location', LOCS[currentLoc].name],
+    ['Planting date', plantLabel()+' 2026'],
+    ['Historical baseline','2020\u20132025 avg (MRCC CSV)'],
+    ['GDU blacklayer\u219221%','217.5 GDU'],
+    ['Formula','((min[Tmax,86\u00b0F]+max[Tmin,50\u00b0F])/2)\u221250\u00b0F'],
+    ['Data source','Pioneer Platform Scores (ALL_Plats_Export-12-19-2025.xlsx)']
+  ];
+  var wsMeta = XLSX.utils.aoa_to_sheet(meta);
+  wsMeta['!cols'] = [{wch:25},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, wsMeta, 'Info');
+  var fname = 'Pioneer_GDU_'+LOCS[currentLoc].short.replace(/\s/g,'_')+'_'+plantLabel().replace(/\s/g,'')+'_2026.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+function updateFootnote() {
+  document.getElementById('footnote').textContent=
+    'Hybrid GDU data: Pioneer Platform Scores (ALL_Plats_Export-12-19-2025.xlsx). '+
+    '2026 actuals: MRCC/ACIS (data.rcc-acis.org). '+
+    '10-day forecast: Open-Meteo (api.open-meteo.com). '+
+    'Historical baseline: 2020\u20132025 daily avg from MRCC CSV exports. '+
+    'Blacklayer \u2192 21%: +'+GDU_DRY+' GDU. Formula: ((min[Tmax,86\u00b0F]+max[Tmin,50\u00b0F])/2)\u221250\u00b0F.';
+}
+
+function updateGduCalendar() {
+  var locIdx=currentLoc;
+  var ms={};
+  for(var hi=0;hi<HYBRIDS.length;hi++){
+    var h=HYBRIDS[hi],r=computeAll(h,locIdx);
+    if(r.silkDOY){if(!ms[r.silkDOY])ms[r.silkDOY]=[];ms[r.silkDOY].push('silk:'+h.label);}
+    if(r.blDOY)  {if(!ms[r.blDOY])  ms[r.blDOY]=[];  ms[r.blDOY].push('bl:'+h.label);}
+    if(r.harvDOY){if(!ms[r.harvDOY])ms[r.harvDOY]=[];ms[r.harvDOY].push('harv:'+h.label);}
+  }
+  // Show from Jan 1 through Nov 10 (DOY 1 -> 314) but start display from Apr 1
+  var startDisplay = 91; // Apr 1
+  var endDisplay   = 314; // Nov 10
+  var html='',cp=0,cj=0,prevM=-1;
+  // Pre-accumulate Jan 1 to Mar 31
+  for(var d=1;d<startDisplay;d++) cj+=getDailyGDU(locIdx,d);
+
+  for(var doy=startDisplay;doy<=endDisplay;doy++){
+    var daily=getDailyGDU(locIdx,doy); cj+=daily; if(doy>plantDOY) cp+=daily;
+    var dt=doyToDate(doy),src=getGDUSource(locIdx,doy);
+    var isToday=(doy===TODAY_DOY),isPlant=(doy===plantDOY),isNewM=(dt.m!==prevM); prevM=dt.m;
+    var msa=ms[doy]||[];
+    var hasSilk=msa.some(function(n){return n.indexOf('silk:')===0;});
+    var hasBL  =msa.some(function(n){return n.indexOf('bl:')===0;});
+    var hasHarv=msa.some(function(n){return n.indexOf('harv:')===0;});
+    var rc='';
+    if(isPlant)            rc='row-plant';
+    else if(isToday)       rc='row-today';
+    else if(hasHarv)       rc='row-harv';
+    else if(hasBL)         rc='row-bl';
+    else if(hasSilk)       rc='row-silk';
+    else if(src==='actual')   rc='row-actual';
+    else if(src==='forecast') rc='row-forecast';
+    else                      rc='row-hist';
+    if(isNewM) rc+=' row-month';
+
+    var notes='';
+    if(isPlant) notes+='<span class="tag tag-plant">Planting</span>';
+    if(isToday) notes+='<span class="tag tag-today">Today</span>';
+    if(src==='actual')   notes+='<span class="tag tag-live">Actual</span>';
+    else if(src==='forecast') notes+='<span class="tag tag-fcst">Forecast</span>';
+    else notes+='<span class="tag tag-hist">2020\u201325 avg</span>';
+
+    var silkH=msa.filter(function(n){return n.indexOf('silk:')===0;}).map(function(n){return n.slice(5);});
+    var blH  =msa.filter(function(n){return n.indexOf('bl:')===0;}).map(function(n){return n.slice(3);});
+    var harvH=msa.filter(function(n){return n.indexOf('harv:')===0;}).map(function(n){return n.slice(5);});
+    if(silkH.length) notes+='<span class="tag tag-silk">Silk: '+silkH.join(', ')+'</span>';
+    if(blH.length)   notes+='<span class="tag tag-bl">BL: '+blH.join(', ')+'</span>';
+    if(harvH.length) notes+='<span class="tag tag-harv">Harv: '+harvH.join(', ')+'</span>';
+
+    html+='<tr class="'+rc+'">'+
+      '<td>'+MONTHS[dt.m]+' '+dt.d+'</td>'+
+      '<td style="color:var(--faint)">'+doy+'</td>'+
+      '<td>'+daily.toFixed(1)+'</td>'+
+      '<td style="font-size:10px;color:var(--faint)">'+(src==='actual'?'&#9679; actual':src==='forecast'?'&#9685; fcst':'&#9651; avg')+'</td>'+
+      '<td>'+(doy>plantDOY?Math.round(cp).toLocaleString():'\u2014')+'</td>'+
+      '<td>'+Math.round(cj).toLocaleString()+'</td>'+
+      '<td>'+notes+'</td></tr>';
+  }
+  document.getElementById('gdu-body').innerHTML=html;
+  document.getElementById('gdu-title').textContent='Daily GDU \u2014 '+LOCS[locIdx].name+' \u2014 planted '+plantLabel();
+  document.getElementById('gdu-footnote').textContent=
+    'Apr 1\u2013Nov 10. \u25cf actual=ACIS live, \u25d1 fcst=Open-Meteo 10-day, \u25b3 avg=2020\u20132025 MRCC average. '+
+    'Cumulative from planting starts day after '+plantLabel()+'.';
+}
+
+function updateAll() {
+  updateStats();updateLegend();updateChart();updateTable();updateFootnote();
+  if(currentTab==='gdu') updateGduCalendar();
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+buildPDDropdown();
+buildHybridList();
+updateAll();       // render immediately with CSV/hist data
+fetchAllLive();    // fetch ACIS + Open-Meteo, re-render on completion
+</script>
+</body>
+</html>
