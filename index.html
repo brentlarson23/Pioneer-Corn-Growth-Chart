@@ -1043,7 +1043,7 @@ function fetchACIS(locIdx, callback) {
     sid:   loc.acis,
     sdate: startDate,
     edate: endDate,
-    elems: [{name:'maxt'},{name:'mint'},{name:'gdd50'}]
+    elems: [{name:'maxt'},{name:'mint'}]  // raw temps only — we calculate GDD ourselves
   };
   var xhr = new XMLHttpRequest();
   xhr.open('POST', 'https://data.rcc-acis.org/StnData', true);
@@ -1067,21 +1067,14 @@ function fetchACIS(locIdx, callback) {
 // ============================================================
 function fetchForecast(locIdx, callback) {
   var loc = LOCS[locIdx];
-  // tomorrow through +10 days
-  var tomorrow = new Date(TODAY);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  var futureDate = new Date(TODAY);
-  futureDate.setDate(futureDate.getDate() + 10);
-  var startStr = futureDate.getFullYear()+'-'+pad2(futureDate.getMonth()+1)+'-'+pad2(tomorrow.getDate());
-  var endStr   = futureDate.getFullYear()+'-'+pad2(futureDate.getMonth()+1)+'-'+pad2(futureDate.getDate());
-
   var url = 'https://api.open-meteo.com/v1/forecast' +
     '?latitude='  + loc.lat +
     '&longitude=' + loc.lon +
     '&daily=temperature_2m_max,temperature_2m_min' +
-    '&temperature_unit=fahrenheit' +
     '&timezone=America%2FChicago' +
     '&forecast_days=11';
+  // Note: no temperature_unit param — Open-Meteo defaults to Celsius
+  // We convert C->F ourselves below to guarantee correct units
 
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
@@ -1128,16 +1121,22 @@ function fetchOneLoc(locIdx, onDone) {
     if (onDone) onDone(locIdx);
   }
 
-  // 1. ACIS actual data
+  // 1. ACIS actual data — calculate GDD ourselves from raw maxt/mint
   fetchACIS(locIdx, function(err, rows) {
     if (!err && rows && rows.length > 0) {
       for (var i = 0; i < rows.length; i++) {
-        var row    = rows[i];
-        var dstr   = row[0];
-        var gddRaw = row[2];
-        if (!gddRaw || gddRaw === 'M' || gddRaw === 'T') continue;
-        var gddVal = parseFloat(gddRaw);
-        if (isNaN(gddVal)) continue;
+        var row  = rows[i];
+        var dstr = row[0];
+        var tmax = row[1];
+        var tmin = row[2];
+        // Skip missing values
+        if (!tmax || tmax === 'M' || tmax === 'T') continue;
+        if (!tmin || tmin === 'M' || tmin === 'T') continue;
+        tmax = parseFloat(tmax);
+        tmin = parseFloat(tmin);
+        if (isNaN(tmax) || isNaN(tmin)) continue;
+        // Apply base-50 / ceiling-86 formula
+        var gddVal = gdd50(tmax, tmin);
         var doy = dateToDOY(dstr);
         store[doy] = {gdu: Math.round(gddVal * 10) / 10, source: 'actual'};
       }
@@ -1147,16 +1146,19 @@ function fetchOneLoc(locIdx, onDone) {
     finish();
   });
 
-  // 2. Open-Meteo 10-day forecast
+  // 2. Open-Meteo 10-day forecast (returns Celsius — convert to F)
   fetchForecast(locIdx, function(err, daily) {
     if (!err && daily && daily.time) {
       var todStr = todayStr();
       for (var i = 0; i < daily.time.length; i++) {
         var dstr  = daily.time[i];
         if (dstr <= todStr) continue; // only future dates
-        var tmax = daily.temperature_2m_max[i];
-        var tmin = daily.temperature_2m_min[i];
-        if (tmax === null || tmin === null) continue;
+        var tmaxC = daily.temperature_2m_max[i];
+        var tminC = daily.temperature_2m_min[i];
+        if (tmaxC === null || tminC === null) continue;
+        // Convert Celsius -> Fahrenheit
+        var tmax = tmaxC * 9/5 + 32;
+        var tmin = tminC * 9/5 + 32;
         var gdd  = Math.round(gdd50(tmax, tmin) * 10) / 10;
         var doy  = dateToDOY(dstr);
         store[doy] = {gdu: gdd, source: 'forecast'};
